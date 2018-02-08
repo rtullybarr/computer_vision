@@ -8,6 +8,10 @@ import os
 def select_images(species):
     with open(species + '.csv') as csvfile:
         reader = csv.DictReader(csvfile)
+
+        # create directory if it doesn't exist
+        os.makedirs(species, exist_ok=True)
+
         for line in reader:
             url = "https://snapshotserengeti.s3.msi.umn.edu/" + line["url_info"]
             resp = requests.get("https://snapshotserengeti.s3.msi.umn.edu/" + line["url_info"], stream=True)
@@ -71,4 +75,4 @@ def select_images(species):
 if __name__ == "__main__":
     species_finished = ["wildebeest"]
     species_todo = ["zebra", "hartebeest", "buffalo", "impala", "giraffe", "elephant", "guineaFowl"]
-    select_images("wildebeest")
+    select_images("zebra")
