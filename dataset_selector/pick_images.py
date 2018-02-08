@@ -20,6 +20,7 @@ def select_images(species):
             small_img = img.resize((img.size[0]//2, img.size[1]//2), Image.ANTIALIAS)
 
             window = tkinter.Tk()
+            window.state('zoomed')
             canvas = tkinter.Canvas(window, width=small_img.size[0], height=small_img.size[1])
             canvas.pack()
             img_tk = ImageTk.PhotoImage(small_img)
