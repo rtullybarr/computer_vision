@@ -80,7 +80,7 @@ def crop_image(species, url_info, filename):
             y2 = img.size[1]
 
 
-        cropped_image = img.crop((x1 * 2, y1 * 2, x2 * 2, y2 * 2))
+        cropped_image = img.crop((x1, y1, x2, y2))
         cropped_image.save(species + "/" + filename)
 
     # rejected images are not saved, added to list of rejected files
