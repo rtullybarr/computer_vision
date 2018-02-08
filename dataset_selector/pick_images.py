@@ -13,6 +13,26 @@ def select_images(species):
         os.makedirs(species, exist_ok=True)
 
         for line in reader:
+
+            # Check if it's a new image
+            existing_images = os.listdir(species)
+            filename = os.path.basename(line["url_info"])
+
+            if filename in existing_images:
+                # skip this one
+                continue
+
+            try:
+                with open(species + "/rejected.csv", 'r+') as rejected_file:
+                    rejected_images = rejected_file.readlines()
+
+                # Check if it's already been rejected
+                if filename in rejected_images:
+                    continue
+
+            except FileNotFoundError:
+                pass
+
             url = "https://snapshotserengeti.s3.msi.umn.edu/" + line["url_info"]
             resp = requests.get("https://snapshotserengeti.s3.msi.umn.edu/" + line["url_info"], stream=True)
 
@@ -67,13 +87,16 @@ def select_images(species):
             if click_count != 0 and (click_count%2) == 0:
                 # we should have co-ordinates of a box containing the animal
                 cropped_img = img.crop((x1*2, y1*2, x2*2, y2*2))
-                filename = os.path.basename(line["url_info"])
                 cropped_img.save(species + "/" + filename)
 
-            # rejected images are not saved
+            # rejected images are not saved, added to list of rejected files
+            else:
+                with open(species + "/rejected.csv", 'a') as rejected_file:
+                    rejected_file.write(filename)
 
 
 if __name__ == "__main__":
     species_finished = ["wildebeest"]
     species_todo = ["zebra", "hartebeest", "buffalo", "impala", "giraffe", "elephant", "guineaFowl"]
-    select_images("zebra")
+
+    select_images("wildebeest")
