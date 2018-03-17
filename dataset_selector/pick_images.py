@@ -60,8 +60,27 @@ def crop_image(species, url_info, filename):
 
     # image has been closed
     if click_count != 0 and (click_count % 2) == 0:
+        image_size = img.size
         # we should have co-ordinates of a box containing the animal
-        cropped_image = img.crop((x1 * 2, y1 * 2, x2 * 2, y2 * 2))
+        # fix bounding box issues
+        x1 *= 2
+        if x1 < 0:
+            x1 = 0
+
+        y1 *= 2
+        if y1 < 0:
+            y1 = 0
+
+        x2 *= 2
+        if x2 >= img.size[0]:
+            x2 = img.size[0]
+
+        y2 *= 2
+        if y2 >= img.size[1]:
+            y2 = img.size[1]
+
+
+        cropped_image = img.crop((x1, y1, x2, y2))
         cropped_image.save(species + "/" + filename)
 
     # rejected images are not saved, added to list of rejected files
@@ -105,7 +124,7 @@ if __name__ == "__main__":
     species_finished = ["wildebeest"]
     species_todo = ["zebra", "hartebeest", "buffalo", "impala", "giraffe", "elephant", "guineaFowl"]
 
-    select_images("wildebeest")
+    select_images("zebra")
 
     # alternate mode: provide the url_info and filename
     # e.g.
