@@ -7,7 +7,7 @@
 %   3. rot: whether to implement rotation invariance default = 0 (false)
 
 
-function features = LBP(filename, varargin)
+function features = LBP(img, varargin)
     Defaults = {[16,16], 0, 0};
     idx = ~cellfun('isempty',varargin);
     Defaults(idx) = varargin(idx);
@@ -16,8 +16,8 @@ function features = LBP(filename, varargin)
     filt = Defaults{2};
     rot = Defaults{3};
     
-    img = imread(filename);
-    img = rgb2gray(img);
+    %img = imread(filename);
+    %img = rgb2gray(img);
     s = size(img);
     r = floor(s(1)/cellsize(1));
     c = floor(s(2)/cellsize(2));

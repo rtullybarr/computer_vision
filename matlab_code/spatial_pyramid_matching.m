@@ -1,14 +1,44 @@
-function single_descriptor = spatial_pyramid_matching(feature_descriptors, dictionary)
+function single_descriptor = spatial_pyramid_matching(dictionary, feature_descriptors)
 % SPATIAL_PYRAMID_MATCHING
-    % Steps:
     
-    % divide the image into 3 spatial scales (whole image, 4 sections, 16
-    % sections
+    % feature descriptors: an RxCx7 matrix of features
+    % get responses of dictionary to feature descriptors
+    whole_image_responses = optimize_assignments(dictionary, reshape(feature_descriptors, [], 7));
+    find(whole_image_responses)
+    size(whole_image_responses)
+    whole_image_responses = max(whole_image_responses);
+    find(whole_image_responses)
+    [r, c, ~] = size(feature_descriptors);
     
-    % get responses of dictionary to feature descriptors of each section
+    x_step = floor(r/2);
+    y_step = floor(c/2);
     
-    % perform max pooling on the responses
+    quarter_responses = cell(2);
+    for i = 1:2
+        for j = 1:2
+            x_start = (i - 1)*x_step + 1;
+            y_start = (j - 1)*y_step + 1;
+            x_end = x_start + x_step;
+            y_end = y_start + y_step;
+            desc = feature_descriptors(x_start:x_end, y_start:y_end, :);
+            quarter_responses{i, j} = max(optimize_assignments(dictionary, reshape(desc, [], 7)));
+        end
+    end
     
-    % concatenate / combine results into a single feature descriptor
+    x_step = floor(r/4);
+    y_step = floor(c/4);
+    sixteenth_responses = cell(4);
+    for i = 1:4
+        for j = 1:4
+            x_start = (i - 1)*x_step + 1;
+            y_start = (j - 1)*y_step + 1;
+            x_end = x_start + x_step;
+            y_end = y_start + y_step;
+            desc = feature_descriptors(x_start:x_end, y_start:y_end, :);
+            sixteenth_responses{i, j} = max(optimize_assignments(dictionary, reshape(desc, [], 7)));
+        end
+    end
+    
+    single_descriptor = [whole_image_responses, quarter_responses{:}, sixteenth_responses{:}];
 end
 
