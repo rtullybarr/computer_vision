@@ -1,9 +1,4 @@
-function dictionary = optimize_dict(dictionary_assignments, feature_descriptors)
-% Optimize the dictionary
-    % least-squares solution
-    size(dictionary_assignments)
-    size(feature_descriptors)
-    dictionary = dictionary_assignments * feature_descriptors;
-    dictionary = normalize(dictionary); 
-    %dictionary = transpose(dictionary);
+function dictionary = optimize_dict(dictionary, dictionary_assignments, feature_descriptors)
+% Optimize the dictionary using lagrange dual
+    dictionary = lagrange_dual(dictionary', dictionary_assignments, feature_descriptors, 1);
 end

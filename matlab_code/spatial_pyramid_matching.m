@@ -4,10 +4,10 @@ function single_descriptor = spatial_pyramid_matching(dictionary, feature_descri
     % feature descriptors: an RxCx7 matrix of features
     % get responses of dictionary to feature descriptors
     whole_image_responses = optimize_assignments(dictionary, reshape(feature_descriptors, [], 7));
-    find(whole_image_responses)
+    whole_image_responses(find(whole_image_responses))
     size(whole_image_responses)
     whole_image_responses = max(whole_image_responses);
-    find(whole_image_responses)
+    whole_image_responses(find(whole_image_responses))
     [r, c, ~] = size(feature_descriptors);
     
     x_step = floor(r/2);
