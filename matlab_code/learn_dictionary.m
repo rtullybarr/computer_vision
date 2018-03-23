@@ -12,7 +12,11 @@ function dictionary = learn_dictionary(feature_descriptors, dict_size, num_itera
     for i = 1:num_iterations
         % Steps: (Iterate)
         % Fix dictionary and optimize dictionary_assignments
-        dictionary_assignments = optimize_assignments(dictionary, feature_descriptors, 0.025);
+        dict_size = size(dictionary)
+        dict_nonzero = length(find(dictionary))
+        dictionary_assignments = optimize_assignments(dictionary, feature_descriptors, 0.026);
+        u_size = size(dictionary_assignments)
+        u_nonzero = length(find(dictionary_assignments))
 
         % Fix dictionary_assignments and optimize dictionary
         new_dictionary = optimize_dict(dictionary, dictionary_assignments, feature_descriptors);
@@ -21,9 +25,6 @@ function dictionary = learn_dictionary(feature_descriptors, dict_size, num_itera
         diff = abs(new_dictionary - dictionary);
         dictionary = new_dictionary;
         diff = sum(diff(:))
-        if diff < 0.01
-            break;
-        end
     end
 end
 

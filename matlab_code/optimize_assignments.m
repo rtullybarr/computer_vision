@@ -2,14 +2,14 @@ function dictionary_assignments = optimize_assignments(dictionary, feature_descr
 % OPTIMIZE_ASSIGNMENTS - given a dictionary and a set of feature
 % descriptors, finds the responses of the dictionary to the descriptors.
 % Used to train the dictionary and when classifying images
-    [m, n] = size(feature_descriptors);
+    [~, n] = size(feature_descriptors);
     [~, dict_size] = size(dictionary);
     dictionary_assignments = zeros(dict_size, n);
-    for i = 1:m
-        [u_lasso, stats] = lasso(dictionary, feature_descriptors(:, i), 'Lambda', lambda);
-        %u_fs = l1ls_featuresign(double(dictionary'), feature_descriptors(i, :)', lambda);
+    for i = 1:n
+        [u, stats] = lasso(dictionary, feature_descriptors(:, i), 'Lambda', 0.026);
+        %u = l1ls_featuresign(double(dictionary), feature_descriptors(:, i), 0.3);
         
-        dictionary_assignments(:, i) = u_lasso;
+        dictionary_assignments(:, i) = u;
     end
 end
 

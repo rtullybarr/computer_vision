@@ -6,8 +6,13 @@ function dictionary = lagrange_dual(X, U, l2norm, V)
     dual_lambda = diag((V \ (X * U')) - U * U');
     lb=zeros(size(dual_lambda));
     %options = optimoptions('fmincon', 'Algorithm', 'trust-region-reflective', 'SpecifyObjectiveGradient', true, 'HessianFcn', 'objective');
+    
+    XUt = X * U';
+    trXXt = sum(sum(X.^2));
+    UUt = U*U';
+    
     options = optimset('GradObj', 'on');
-    [new_lambdas, ~] = fmincon(@(new_lambdas) basis_objective(new_lambdas, U, X, l2norm^2), dual_lambda, [], [], [], [], lb, [], [], options);
+    [new_lambdas, ~] = fmincon(@(new_lambdas) basis_objective(new_lambdas, XUt, trXXt, UUt, l2norm^2), dual_lambda, [], [], [], [], lb, [], [], options);
     
     dual_lambda = new_lambdas;
     lambda_diag = diag(dual_lambda);
@@ -17,36 +22,41 @@ function dictionary = lagrange_dual(X, U, l2norm, V)
     dictionary = V';
 end
 
-function [result, gradient, hessian] = basis_objective(dual_lambda, U, X, c)
+function [f, g, h] = basis_objective(dual_lambda, XUt, trXXt, UUt, c)
     % lagrange dual, D(lambda):
     % trace(X'X?XU' *(UU'+ ?)^-1 * (XU')' ? c?)
-    
-    XUt = X * U';
-    L = size(XUt, 1);
-    M = length(dual_lambda);
-    trXXt = sum(sum(X.^2));
-    
-    UUt = U*U';
+    L= size(XUt,1);
+    M= length(dual_lambda);
+
     UUt_inv = inv(UUt + diag(dual_lambda));
-    
+
+    % trXXt = sum(sum(X.^2));
     if L>M
         % (M*M)*((M*L)*(L*M)) => MLM + MMM = O(M^2(M+L))
-        result = trace(UUt_inv*(XUt'*XUt)) - trXXt + c*sum(dual_lambda);
+        f = -trace(UUt_inv*(XUt'*XUt))+trXXt-c*sum(dual_lambda);
 
     else
         % (L*M)*(M*M)*(M*L) => LMM + LML = O(LM(M+L))
-        result = trace(XUt*UUt_inv*XUt') - trXXt + c*sum(dual_lambda);
+        f = -trace(XUt*UUt_inv*XUt')+trXXt-c*sum(dual_lambda);
     end
-    
-    % Gradient of D(lambda)
-    % ?XU'*inv(U*U' + ?)ei?^2 ? c
-    if nargout > 1
-        gradient = c - sum(X*U'*UUt_inv).^2;
-    end
-    
-    % Hessian of D(lambda)
-    if nargout > 2
-        hessian = 2 .* ((X*U'*UUt_inv)'*(X*U'*UUt_inv)).*UUt_inv;
+    f= -f;
+
+    if nargout > 1   % fun called with two output arguments
+        % Gradient of the function evaluated at x
+        g = zeros(M,1);
+        temp = XUt*UUt_inv;
+        g = sum(temp.^2) - c;
+        g= -g;
+        %gs = sum(g)
+
+
+        if nargout > 2
+            % Hessian evaluated at x
+            % H = -2.*((SSt_inv*XSt'*XSt*SSt_inv).*SSt_inv);
+            H = -2.*((temp'*temp).*UUt_inv);
+            H = -H;
+            %hs = sum(H)
+        end
     end
 end
 
