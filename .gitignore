@@ -4,3 +4,4 @@
 *.iml
 .idea/computer_vision.iml
 .idea/modules.xml
+*.asv
