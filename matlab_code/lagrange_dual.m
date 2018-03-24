@@ -11,7 +11,7 @@ function dictionary = lagrange_dual(X, U, l2norm, V)
     trXXt = sum(sum(X.^2));
     UUt = U*U';
     
-    options = optimset('GradObj', 'on');
+    options = optimset('GradObj', 'on', 'Display', 'off');
     [new_lambdas, ~] = fmincon(@(new_lambdas) basis_objective(new_lambdas, XUt, trXXt, UUt, l2norm^2), dual_lambda, [], [], [], [], lb, [], [], options);
     
     dual_lambda = new_lambdas;

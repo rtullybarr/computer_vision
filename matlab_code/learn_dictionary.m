@@ -1,4 +1,4 @@
-function dictionary = learn_dictionary(feature_descriptors, dict_size, num_iterations)
+function dictionary = learn_dictionary(feature_descriptors, dict_size, num_iterations, lambda)
 %LEARN_DICTIONARY sparse codes the given set of feature descriptors
 % using the feature-sign / lasso algorithm
     [~, n] = size(feature_descriptors);
@@ -12,11 +12,7 @@ function dictionary = learn_dictionary(feature_descriptors, dict_size, num_itera
     for i = 1:num_iterations
         % Steps: (Iterate)
         % Fix dictionary and optimize dictionary_assignments
-        dict_size = size(dictionary)
-        dict_nonzero = length(find(dictionary))
-        dictionary_assignments = optimize_assignments(dictionary, feature_descriptors, 0.026);
-        u_size = size(dictionary_assignments)
-        u_nonzero = length(find(dictionary_assignments))
+        dictionary_assignments = optimize_assignments(dictionary, feature_descriptors, lambda);
 
         % Fix dictionary_assignments and optimize dictionary
         new_dictionary = optimize_dict(dictionary, dictionary_assignments, feature_descriptors);
@@ -24,7 +20,10 @@ function dictionary = learn_dictionary(feature_descriptors, dict_size, num_itera
         % return dictionary when optimization doesn't change much
         diff = abs(new_dictionary - dictionary);
         dictionary = new_dictionary;
-        diff = sum(diff(:))
+        diff = sum(diff(:));
+        if diff < 0.0001
+            break;
+        end
     end
 end
 
