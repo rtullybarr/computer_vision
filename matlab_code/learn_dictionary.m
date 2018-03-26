@@ -1,29 +1,26 @@
-function dictionary = learn_dictionary(feature_descriptors, dict_size, num_iterations, lambda)
-%LEARN_DICTIONARY sparse codes the given set of feature descriptors
-% using the feature-sign / lasso algorithm
-    [~, n] = size(feature_descriptors);
-    % n: dimension of feature space
-    % m: number of feature descriptors
+function dictionary = learn_dictionary(features, training_set_fraction, dictionary_size, iterations, lambda)
+%LEARN DICTIONARY - uses the provided features to learn a dictionary
     
-    % initialize dictionary: random set of feature descriptors
-    perm = randperm(n);
-    dictionary = feature_descriptors(:, perm(1:dict_size));
-
-    for i = 1:num_iterations
-        % Steps: (Iterate)
-        % Fix dictionary and optimize dictionary_assignments
-        dictionary_assignments = optimize_assignments(dictionary, feature_descriptors, lambda);
-
-        % Fix dictionary_assignments and optimize dictionary
-        new_dictionary = optimize_dict(dictionary, dictionary_assignments, feature_descriptors);
-
-        % return dictionary when optimization doesn't change much
-        diff = abs(new_dictionary - dictionary);
-        dictionary = new_dictionary;
-        diff = sum(diff(:));
-        if diff < 0.0001
-            break;
-        end
+    features_flat = cell(length(features), 1);
+    for i = 1:length(features)
+        % desc: a RxCxd matrix of descriptors
+        desc = features{i};
+        [~, ~, d] = size(desc);
+        features_flat{i} = reshape(desc, [], d);
+        features_flat{i} = features_flat{i}';
     end
+
+    features_all = cat(2, features_flat{:});
+
+    % select a percentage of the descriptors
+    [~, num_descriptors] = size(features_all);
+    perm = randperm(num_descriptors);
+    top = floor(num_descriptors*training_set_fraction);
+    dictionary_learning_set = features_all(:, perm(1:top));
+    
+    learning_set_size = length(dictionary_learning_set)
+    
+    % learn the dictionary using sparse coding
+    dictionary = sparse_coding(dictionary_learning_set, dictionary_size, iterations, lambda);
 end
 

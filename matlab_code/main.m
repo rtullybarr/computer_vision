@@ -1,55 +1,89 @@
-function main(dictionary_size, dictionary_iterations, lambda)
+function [LBP_dictionary, LBP_model, LBP_X_test, SIFT_dictionary, SIFT_model, SIFT_X_test, Y_test] = main(dictionary_size, dictionary_iterations, lambda)
     %Using LBP to train dictionary.
-    fprintf("Reading and preprocessing images.");
+    fprintf("Reading and preprocessing images.\n");
     tic
-    giraffes = preprocess(get_image_filenames('giraffe', '*.jpg'), [256 256]);
+    wildebeest = preprocess(get_image_filenames('wildebeest', '*.jpg'), [256 256]);
+    guineaFowl = preprocess(get_image_filenames('guineaFowl', '*.jpg'), [256 256]);
+    
+    all_images = [wildebeest; guineaFowl];
+    class_labels = [ones(length(wildebeest), 1); zeros(length(guineaFowl), 1)];
     toc
 
-    fprintf("Extracting local binary patterns.");
+    fprintf("Extracting local binary patterns.\n");
     tic
-    descriptors = cell(length(giraffes), 1);
-    for i = 1:length(giraffes)
-        descriptors{i} = LBP(giraffes{i});
+    LBP_features = cell(length(all_images), 1);
+    for i = 1:length(all_images)
+        LBP_features{i} = LBP(all_images{i});
     end
     toc
-
-    fprintf("Selecting random subset of features for dictionary.");
+    
+    training_set_size = 0.2;
+    
+    fprintf("Learning dictionary - LBP.\n");
     tic
-    descriptors_flat = cell(length(descriptors), 1);
-    for i = 1:length(descriptors)
-        % desc: a RxCxd matrix of descriptors
-        desc = descriptors{i};
-        [~, ~, d] = size(desc);
-        descriptors_flat{i} = reshape(desc, [], d);
-        descriptors_flat{i} = descriptors_flat{i}';
+    LBP_dictionary = learn_dictionary(LBP_features, training_set_size, dictionary_size, dictionary_iterations, lambda);
+    toc
+
+    fprintf("Extracting SIFT descriptors.\n");
+    tic
+    SIFT_features = cell(length(all_images), 1);
+    for i = 1:length(all_images)
+        SIFT_features{i} = sift_features(all_images{i});
     end
-
-    all_descriptors = cat(2, descriptors_flat{:});
-
-    % select 20% of the descriptors
-    [~, num_descriptors] = size(all_descriptors);
-    perm = randperm(num_descriptors);
-    top = floor(num_descriptors*0.2);
-    dictionary_learning_set = all_descriptors(:, perm(1:top));
-    
-    toc
-
-    fprintf("Learning dictionary.");
-    tic
-    % learn the dictionary
-    dictionary = learn_dictionary(dictionary_learning_set, dictionary_size, dictionary_iterations, lambda);
     toc
     
-    fprintf("Assembling image vectors using SPM.");
+    fprintf("Learning dictionary - SIFT.\n");
     tic
-    image_vectors = cell(length(descriptors));
-    for i = 1:length(descriptors)
+    SIFT_dictionary = learn_dictionary(SIFT_features, training_set_size, dictionary_size, dictionary_iterations, lambda);
+    toc
+    
+    fprintf("Assembling image vectors using SPM.\n");
+    tic
+    
+    % known quantity: the length of the image_vector returned by the SPM
+    % step is dict_size + 4*dict_size + 16*dict_size
+    img_vector_len = 21*dictionary_size;
+    
+    LBP_image_vectors = zeros(length(LBP_features), img_vector_len);
+    for i = 1:length(LBP_features)
         % Use SPM to get a single image vector
-        image_vectors{i} = spatial_pyramid_matching(dictionary, descriptors{1}, lambda);
+        LBP_image_vectors{i} = spatial_pyramid_matching(LBP_dictionary, LBP_features{i}, lambda);
     end
+    
+    SIFT_image_vectors = zeros(length(LBP_features), img_vector_len);
+    for i = 1:length(LBP_features)
+        % Use SPM to get a single image vector
+        SIFT_image_vectors{i} = spatial_pyramid_matching(SIFT_dictionary, LBP_features{i}, lambda);
+    end
+    
     toc
     
-    % Associate image vectors with species label
-
-    % 
+    fprintf("Training SVMs.\n");
+    tic
+    % SVM training and testing
+    % permutation
+    perm = randperm(length(class_labels));
+    
+    % 80% train, 20% test
+    split = floor(length(class_labels) * 0.8);
+    
+    % training set
+    LBP_X_train = LBP_image_vectors(perm(1:split), :);
+    LBP_X_test = LBP_image_vectors(perm(split + 1:end), :);
+    
+    SIFT_X_train = SIFT_image_vectors(perm(1:split), :);
+    SIFT_X_test = SIFT_image_vectors(perm(split + 1:end), :);
+    
+    Y_train = class_labels(perm(1:split), :);
+    Y_test = class_labels(perm(split + 1:end), :);
+    
+    % LBP
+    LBP_model = train_svm(LBP_X_train, Y_train);
+    [precision, recall] = evaluate_model(LBP_model, LBP_X_test, Y_test)
+    
+    % SIFT
+    SIFT_model = train_svm(SIFT_X_train, Y_train);
+    [precision, recall] = evaluate_model(SIFT_model, SIFT_X_test, Y_test)
+    
+    toc
 end
