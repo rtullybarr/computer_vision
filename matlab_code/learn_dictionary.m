@@ -18,8 +18,6 @@ function dictionary = learn_dictionary(features, training_set_fraction, dictiona
     top = floor(num_descriptors*training_set_fraction);
     dictionary_learning_set = features_all(:, perm(1:top));
     
-    learning_set_size = length(dictionary_learning_set)
-    
     % learn the dictionary using sparse coding
     dictionary = sparse_coding(dictionary_learning_set, dictionary_size, iterations, lambda);
 end

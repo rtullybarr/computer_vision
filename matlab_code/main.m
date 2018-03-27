@@ -1,9 +1,13 @@
-function [LBP_dictionary, LBP_model, LBP_X_test, SIFT_dictionary, SIFT_model, SIFT_X_test, Y_test] = main(dictionary_size, dictionary_iterations, lambda)
-    %Using LBP to train dictionary.
+%function [LBP_dictionary, LBP_model, LBP_X_test, SIFT_dictionary, SIFT_model, SIFT_X_test, Y_test] = main(dictionary_size, dictionary_iterations, lambda)
+
+    dictionary_size = 128;
+    dictionary_iterations = 10;
+    lambda = 0.026;
+    
     fprintf("Reading and preprocessing images.\n");
     tic
     wildebeest = preprocess(get_image_filenames('wildebeest', '*.jpg'), [256 256]);
-    guineaFowl = preprocess(get_image_filenames('guineaFowl', '*.jpg'), [256 256]);
+    guineaFowl = preprocess(get_image_filenames('hartebeest', '*.jpg'), [256 256]);
     
     all_images = [wildebeest; guineaFowl];
     class_labels = [ones(length(wildebeest), 1); zeros(length(guineaFowl), 1)];
@@ -28,7 +32,7 @@ function [LBP_dictionary, LBP_model, LBP_X_test, SIFT_dictionary, SIFT_model, SI
     tic
     SIFT_features = cell(length(all_images), 1);
     for i = 1:length(all_images)
-        SIFT_features{i} = sift_features(all_images{i});
+        SIFT_features{i} = double(sift_features(all_images{i}));
     end
     toc
     
@@ -47,13 +51,13 @@ function [LBP_dictionary, LBP_model, LBP_X_test, SIFT_dictionary, SIFT_model, SI
     LBP_image_vectors = zeros(length(LBP_features), img_vector_len);
     for i = 1:length(LBP_features)
         % Use SPM to get a single image vector
-        LBP_image_vectors{i} = spatial_pyramid_matching(LBP_dictionary, LBP_features{i}, lambda);
+        LBP_image_vectors(i, :) = spatial_pyramid_matching(LBP_dictionary, LBP_features{i}, lambda);
     end
     
     SIFT_image_vectors = zeros(length(LBP_features), img_vector_len);
     for i = 1:length(LBP_features)
         % Use SPM to get a single image vector
-        SIFT_image_vectors{i} = spatial_pyramid_matching(SIFT_dictionary, LBP_features{i}, lambda);
+        SIFT_image_vectors(i, :) = spatial_pyramid_matching(SIFT_dictionary, SIFT_features{i}, lambda);
     end
     
     toc
@@ -79,11 +83,11 @@ function [LBP_dictionary, LBP_model, LBP_X_test, SIFT_dictionary, SIFT_model, SI
     
     % LBP
     LBP_model = train_svm(LBP_X_train, Y_train);
-    [precision, recall] = evaluate_model(LBP_model, LBP_X_test, Y_test)
+    [LBP_precision, LBP_recall] = evaluate_model(LBP_model, LBP_X_test, Y_test);
     
     % SIFT
     SIFT_model = train_svm(SIFT_X_train, Y_train);
-    [precision, recall] = evaluate_model(SIFT_model, SIFT_X_test, Y_test)
+    [SIFT_precision, SIFT_recall] = evaluate_model(SIFT_model, SIFT_X_test, Y_test);
     
     toc
-end
+%end
