@@ -4,13 +4,13 @@ class2 = {'test_images/moth2.jpg'; 'test_images/moth1.jpg'; 'test_images/tulips.
 class1 = preprocess(class1, [256, 256]);
 class2 = preprocess(class2, [256, 256]);
 
-class1_LBP = [LBP(class1{1}); LBP(class1{2}); LBP(class1{3})];
-class1_HOG = [HOG(class1{1}); HOG(class1{2}); HOG(class1{3})];
+class1_LBP = [feats.LBP(class1{1}); feats.LBP(class1{2}); feats.LBP(class1{3})];
+class1_HOG = [feats.HOG(class1{1}); feats.HOG(class1{2}); feats.HOG(class1{3})];
 
 class1_features = [class1_LBP class1_HOG];
 
-class2_LBP = [LBP(class2{1}); LBP(class2{2}); LBP(class2{3})];
-class2_HOG = [HOG(class2{1}); HOG(class2{2}); HOG(class2{3})];
+class2_LBP = [feats.LBP(class2{1}); feats.LBP(class2{2}); feats.LBP(class2{3})];
+class2_HOG = [feats.HOG(class2{1}); feats.HOG(class2{2}); feats.HOG(class2{3})];
 
 class2_features = [class2_LBP class2_HOG];
 
