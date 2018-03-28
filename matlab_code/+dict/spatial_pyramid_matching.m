@@ -5,7 +5,7 @@ function single_descriptor = spatial_pyramid_matching(dictionary, feature_descri
     % get responses of dictionary to feature descriptors
     [r, c, d] = size(feature_descriptors);
     
-    whole_image_responses = optimize_assignments(dictionary, reshape(feature_descriptors, d, []), lambda);
+    whole_image_responses = dict.optimize_assignments(dictionary, reshape(feature_descriptors, d, []), lambda);
     whole_image_responses = max(whole_image_responses, [], 2)';
     
     x_step = floor(r/2);

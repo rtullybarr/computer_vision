@@ -1,4 +1,4 @@
-function model = train_svm(feature_descriptors, labels)
+function model = train(feature_descriptors, labels)
 %TRAIN SVM
     model = fitcsvm(feature_descriptors, labels);
 end

@@ -7,17 +7,18 @@
     fprintf("Reading and preprocessing images.\n");
     tic
     wildebeest = preprocess(get_image_filenames('wildebeest', '*.jpg'), [256 256]);
-    guineaFowl = preprocess(get_image_filenames('hartebeest', '*.jpg'), [256 256]);
+    guineaFowl = preprocess(get_image_filenames('guineaFowl', '*.jpg'), [256 256]);
+    hartebeest = preprocess(get_image_filenames('hartebeest', '*.jpg'), [256 256]);
     
-    all_images = [wildebeest; guineaFowl];
-    class_labels = [ones(length(wildebeest), 1); zeros(length(guineaFowl), 1)];
+    all_images = [hartebeest; guineaFowl];
+    class_labels = [ones(length(hartebeest), 1); zeros(length(guineaFowl), 1)];
     toc
 
     fprintf("Extracting local binary patterns.\n");
     tic
     LBP_features = cell(length(all_images), 1);
     for i = 1:length(all_images)
-        LBP_features{i} = LBP(all_images{i});
+        LBP_features{i} = feats.LBP(all_images{i});
     end
     toc
     
@@ -25,20 +26,20 @@
     
     fprintf("Learning dictionary - LBP.\n");
     tic
-    LBP_dictionary = learn_dictionary(LBP_features, training_set_size, dictionary_size, dictionary_iterations, lambda);
+    LBP_dictionary = dict.learn_dictionary(LBP_features, training_set_size, dictionary_size, dictionary_iterations, lambda);
     toc
 
     fprintf("Extracting SIFT descriptors.\n");
     tic
     SIFT_features = cell(length(all_images), 1);
     for i = 1:length(all_images)
-        SIFT_features{i} = double(sift_features(all_images{i}));
+        SIFT_features{i} = double(feats.sift_features(all_images{i}));
     end
     toc
     
     fprintf("Learning dictionary - SIFT.\n");
     tic
-    SIFT_dictionary = learn_dictionary(SIFT_features, training_set_size, dictionary_size, dictionary_iterations, lambda);
+    SIFT_dictionary = dict.learn_dictionary(SIFT_features, training_set_size, dictionary_size, dictionary_iterations, lambda);
     toc
     
     fprintf("Assembling image vectors using SPM.\n");
@@ -51,13 +52,13 @@
     LBP_image_vectors = zeros(length(LBP_features), img_vector_len);
     for i = 1:length(LBP_features)
         % Use SPM to get a single image vector
-        LBP_image_vectors(i, :) = spatial_pyramid_matching(LBP_dictionary, LBP_features{i}, lambda);
+        LBP_image_vectors(i, :) = dict.spatial_pyramid_matching(LBP_dictionary, LBP_features{i}, lambda);
     end
     
     SIFT_image_vectors = zeros(length(LBP_features), img_vector_len);
     for i = 1:length(LBP_features)
         % Use SPM to get a single image vector
-        SIFT_image_vectors(i, :) = spatial_pyramid_matching(SIFT_dictionary, SIFT_features{i}, lambda);
+        SIFT_image_vectors(i, :) = dict.spatial_pyramid_matching(SIFT_dictionary, SIFT_features{i}, lambda);
     end
     
     toc
@@ -82,12 +83,12 @@
     Y_test = class_labels(perm(split + 1:end), :);
     
     % LBP
-    LBP_model = train_svm(LBP_X_train, Y_train);
-    [LBP_precision, LBP_recall] = evaluate_model(LBP_model, LBP_X_test, Y_test);
+    LBP_model = svm.train(LBP_X_train, Y_train);
+    [LBP_precision, LBP_recall] = svm.evaluate_model(LBP_model, LBP_X_test, Y_test);
     
     % SIFT
-    SIFT_model = train_svm(SIFT_X_train, Y_train);
-    [SIFT_precision, SIFT_recall] = evaluate_model(SIFT_model, SIFT_X_test, Y_test);
+    SIFT_model = svm.train(SIFT_X_train, Y_train);
+    [SIFT_precision, SIFT_recall] = svm.evaluate_model(SIFT_model, SIFT_X_test, Y_test);
     
     toc
 %end

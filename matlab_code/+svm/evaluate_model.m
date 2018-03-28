@@ -1,7 +1,7 @@
 function [precision, recall] = evaluate_model(model, X_test, Y_test)
 %EVALUATE_MODEL evaluates the provided model; returns precision and recall.
 
-    predictions = svm_predict(model, X_test);
+    predictions = predict(model, X_test);
     
     % evaluate results
     TP = Y_test .* predictions; % both 1

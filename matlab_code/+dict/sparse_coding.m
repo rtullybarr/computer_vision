@@ -14,13 +14,13 @@ function dictionary = sparse_coding(feature_descriptors, dict_size, num_iteratio
         % Fix dictionary and optimize dictionary_assignments
         fprintf("Optimizing dictionary_assignments using lasso.\n");
         %tic
-        dictionary_assignments = optimize_assignments(dictionary, feature_descriptors, lambda);
+        dictionary_assignments = dict.optimize_assignments(dictionary, feature_descriptors, lambda);
         %toc
 
         % Fix dictionary_assignments and optimize dictionary
         fprintf("Optimizing dictionary using lagrange dual.\n");
         %tic
-        new_dictionary = optimize_dictionary(dictionary, dictionary_assignments, feature_descriptors);
+        new_dictionary = dict.optimize_dictionary(dictionary, dictionary_assignments, feature_descriptors);
         %toc
 
         % return dictionary when optimization doesn't change much
