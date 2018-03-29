@@ -1,4 +1,4 @@
-function dictionary = learn_dictionary(features, training_set_fraction, dictionary_size, iterations, lambda)
+function dictionary = learn_dictionary(features, training_set_size, dictionary_size, iterations, lambda)
 %LEARN DICTIONARY - uses the provided features to learn a dictionary
     
     features_flat = cell(length(features), 1);
@@ -15,8 +15,7 @@ function dictionary = learn_dictionary(features, training_set_fraction, dictiona
     % select a percentage of the descriptors
     [~, num_descriptors] = size(features_all);
     perm = randperm(num_descriptors);
-    top = floor(num_descriptors*training_set_fraction);
-    dictionary_learning_set = features_all(:, perm(1:top));
+    dictionary_learning_set = features_all(:, perm(1:training_set_size));
     
     % learn the dictionary using sparse coding
     dictionary = dict.sparse_coding(dictionary_learning_set, dictionary_size, iterations, lambda);
