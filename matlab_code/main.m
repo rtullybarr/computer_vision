@@ -3,6 +3,7 @@
     dictionary_size = 128;
     dictionary_iterations = 10;
     lambda = 0.026;
+    training_set_size = 20000;
     
     fprintf("Reading and preprocessing images.\n");
     tic
@@ -21,8 +22,6 @@
         LBP_features{i} = feats.LBP(all_images{i});
     end
     toc
-    
-    training_set_size = 0.2;
     
     fprintf("Learning dictionary - LBP.\n");
     tic
