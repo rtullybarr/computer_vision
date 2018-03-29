@@ -12,6 +12,6 @@ y_train = y(perm(1:split_point));
 X_test = X(perm(split_point + 1:end), :);
 y_test = y(perm(split_point + 1:end));
 
-svm = train_svm(X_train, y_train);
+svm = svm.train(X_train, y_train);
 
-prediction = svm_predict(svm, X_test);
+prediction = svm.predict(svm, X_test);

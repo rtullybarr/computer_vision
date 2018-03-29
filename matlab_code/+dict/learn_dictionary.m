@@ -19,6 +19,6 @@ function dictionary = learn_dictionary(features, training_set_fraction, dictiona
     dictionary_learning_set = features_all(:, perm(1:top));
     
     % learn the dictionary using sparse coding
-    dictionary = sparse_coding(dictionary_learning_set, dictionary_size, iterations, lambda);
+    dictionary = dict.sparse_coding(dictionary_learning_set, dictionary_size, iterations, lambda);
 end
 
