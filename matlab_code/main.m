@@ -79,8 +79,8 @@
     SIFT_X_train = SIFT_image_vectors(perm(1:split), :);
     SIFT_X_test = SIFT_image_vectors(perm(split + 1:end), :);
     
-    Y_train = class_labels(perm(1:split), :);
-    Y_test = class_labels(perm(split + 1:end), :);
+    Y_train = class_labels(perm(1:split));
+    Y_test = class_labels(perm(split + 1:end));
     
     % LBP
     LBP_model = svm.train(LBP_X_train, Y_train);
@@ -89,6 +89,14 @@
     % SIFT
     SIFT_model = svm.train(SIFT_X_train, Y_train);
     [SIFT_precision, SIFT_recall] = svm.evaluate_model(SIFT_model, SIFT_X_test, Y_test);
+    
+    % find misclassified images and display them.
+    errors = find(Y_test ~= prediction);
+    err_indices = perm(errors + split + 1);
+    
+    for i = 1:length(err_indices)
+        imshow(all_images{err_indices(i)});
+    end
     
     toc
 %end
