@@ -10,9 +10,10 @@
     wildebeest = preprocess(get_image_filenames('wildebeest', '*.jpg'), [256 256]);
     guineaFowl = preprocess(get_image_filenames('guineaFowl', '*.jpg'), [256 256]);
     hartebeest = preprocess(get_image_filenames('hartebeest', '*.jpg'), [256 256]);
+    giraffe = preprocess(get_image_filenames('giraffe', '*.jpg'), [256 256]);
     
-    all_images = [hartebeest; guineaFowl];
-    class_labels = [ones(length(hartebeest), 1); zeros(length(guineaFowl), 1)];
+    all_images = [wildebeest; guineaFowl; hartebeest; giraffe];
+    class_labels = [ones(length(wildebeest), 1); zeros(length(guineaFowl), 1); zeros(length(hartebeest), 1); zeros(length(giraffe), 1)];
     toc
 
     fprintf("Extracting local binary patterns.\n");
