@@ -2,14 +2,25 @@ function dictionary = lagrange_dual(X, U, l2norm, V)
 %LAGRANGE_DUAL 
 % learn dictionary bases given coefficients and features
 % minimize || feature_descriptors - dictionary * dictionary_assignments ||^2
-    
-    dual_lambda = diag((V \ (X * U')) - U * U');
-    lb=zeros(size(dual_lambda));
-    %options = optimoptions('fmincon', 'Algorithm', 'trust-region-reflective', 'SpecifyObjectiveGradient', true, 'HessianFcn', 'objective');
-    
+
     XUt = X * U';
     trXXt = sum(sum(X.^2));
     UUt = U*U';
+    
+    disp('?');
+    
+    % If V is badly conditioned, randomly initialize the dual_lambda
+    % instead.
+    v_cond = cond(V)
+    
+    if v_cond > 1000 || isnan(v_cond)
+        dual_lambda = 10*abs(rand(size(U, 1), 1));
+    else
+        temp = V\XUt - UUt
+        dual_lambda = diag(temp);
+    end
+    
+    lb=zeros(size(dual_lambda));
     
     options = optimset('GradObj', 'on', 'Display', 'off');
     %options = optimset('GradObj', 'on');
@@ -28,8 +39,9 @@ function [f, g, h] = basis_objective(dual_lambda, XUt, trXXt, UUt, c)
     % trace(X'X?XU' *(UU'+ ?)^-1 * (XU')' ? c?)
     L= size(XUt,1);
     M= length(dual_lambda);
+    diag_lambda = diag(dual_lambda);
 
-    UUt_inv = inv(UUt + diag(dual_lambda));
+    UUt_inv = inv(UUt + diag_lambda);
 
     % trXXt = sum(sum(X.^2));
     if L>M
@@ -44,20 +56,10 @@ function [f, g, h] = basis_objective(dual_lambda, XUt, trXXt, UUt, c)
 
     if nargout > 1   % fun called with two output arguments
         % Gradient of the function evaluated at x
-        g = zeros(M,1);
         temp = XUt*UUt_inv;
         g = sum(temp.^2) - c;
         g= -g;
         %gs = sum(g)
-
-
-        if nargout > 2
-            % Hessian evaluated at x
-            % H = -2.*((SSt_inv*XSt'*XSt*SSt_inv).*SSt_inv);
-            H = -2.*((temp'*temp).*UUt_inv);
-            H = -H;
-            %hs = sum(H)
-        end
     end
 end
 
