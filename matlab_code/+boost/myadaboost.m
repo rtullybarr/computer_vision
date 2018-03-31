@@ -1,4 +1,4 @@
-function [ada_train, ada_test]= myadaboost(training_table, testing_table, trials)
+function [ada_train, ada_test]= myadaboost(training_set, testing_set, trials)
 % AdaBoost function 
 % training_table-> input: training set
 %           feature_1 feature_2 ... feature_n class_labels
@@ -11,30 +11,44 @@ function [ada_train, ada_test]= myadaboost(training_table, testing_table, trials
 % trials-> input: number of trials to test (# intermediate classifiers)
 % ada_train-> label: training set
 % ada_test-> label: testing set
-
 % Choosen Weak classifier: SVM
-% training_table = [num2cell(f1,2), num2cell(f2,2), num2cell(f3,2), num2cell(class_labels,2)]
 
 % Initialize Variables
-M = size(training_table,1);     % number of training samples
-N = size(training_table,2)-1;   % number of feature types
-T = trials;                     % number of training trials
-D =(1/M)*ones(M,1);             % initial training sample weights  
+M = size(training_set,1);     % number of training samples
+N = size(training_set,2)-1;   % number of feature types
+T = trials;                   % number of training trials
+D =(1/M)*ones(M,1);           % initial training sample weights  
 
-svm_model = cell(1, N);  % weak learners   
-svm_train = zeros(M,N);  % weak learner training outputs  
-%eps_w = zeros(1,N);      % classification errors of weak learners
+svm_model = cell(1, N);       % weak learners   
+svm_train = zeros(M,N);       % weak learner training outputs  
 
-h_model = cell(T, 1);    % intermediate classifiers
-h_train = zeros(M,T);    % intermediate classifier training outputs 
-h_test = zeros(size(testing_table,1),T);     % intermediate classifier test outputs  
-eps_h = zeros(T,1);      % intermediate classifier errors   
-alpha = zeros(T,1);      % intermediate classifier weights
+h_model = cell(T, 1);         % intermediate classifiers
+h_train = zeros(M,T);         % intermediate classifier training outputs 
+h_weights = zeros(N,T);       % intermediate classifier weights   
+alpha = zeros(T,1);           % final classifier weights
 
-%difficult_data = [];     % data with weights above a threshold, difficult to classify, and selected more often over the boosting process
-S = cell(M,N+1);          % weighted training set
-sigma = 24;
-for t = 1:T
+difficult_data = cell(0);     % data with weights above a threshold, difficult to classify, and selected more often over the boosting process
+S = cell(M,N+1);              % weighted training set
+
+% Calculate the average minimal distance between any two training samples
+sigma_min_all = zeros(N,1);
+for i = 1:N
+    samples = cell2mat(training_set(:,N));
+    dist = pdist(samples, 'euclidean', 'Smallest');
+    dist = squareform(dist);
+    dist = dist(dist~=0);
+    dist = reshape(dist, M-1, M);
+    dist = min(dist);
+    sigma_min_all(i) = mean(dist);
+end
+
+sigma_min = mean(sigma_min_all);
+disp(sigma_min);
+
+sigma = T; % inital sigma
+step = 1;  % sigma decrease step
+t = 1;     % trial number
+while (sigma > sigma_min) && (isfinite(alpha(t)))
     % train an intermediate classifier h(t)
     tic
     fprintf("Trial %d.\n", t);
@@ -48,7 +62,7 @@ for t = 1:T
 
                 p = (p_max-p_min)*rand(1) + p_min;
                 if D(i)>=p
-                    difficult_data(i,:)=training_table(i,:);
+                    difficult_data(end+1,:)=training_set(i,:);
                 end
 
                 % select random row of difficult_data, add to training set S 
@@ -62,7 +76,7 @@ for t = 1:T
 
     % 2. train an svm classifier for each feature type f
         for f = 1:N
-            fprintf("Training SVM %d out of %d\n", f, N);
+            %fprintf("Training SVM %d out of %d\n", f, N);
             X = cell2mat(Sx(:,f));
             svm_model{f}=fitcsvm(X,Y,'KernelFunction','rbf', 'KernelScale', sigma);
             svm_train(:,f)=predict(svm_model{f}, X);
@@ -70,46 +84,74 @@ for t = 1:T
 
     % 3. intermediate classifier h(t) = linear combination of svm classifiers
         h_model{t} = svm_model;
-        h_train(:,t) = round(sum(svm_train*(1/N),2));
-    
-    % 3.5 apply intermediate classifier  h(t) to test data 
-        h_test(:,t) = combo_predict(h_model{t}, testing_table,N);
+        h_weights(:,t) = calc_weights(svm_train, Y, N, M, D);
+        h_train(:,t) = combine_classifiers(svm_train, h_weights(:,t));
 
-    % 4. calculate classification error for intermediate classifier h(t)
-        for i=1:M
-            if (h_train(i,t)~=Y(i))
-                eps_h(t)=eps_h(t)+D(i); 
-            end  
-        end
-        fprintf("Epsilon %d = %f.\n", t, eps_h(t));
-
-    % 5. Calculate intermediate classifier weight
-         alpha(t)=0.5*log((1-eps_h(t))/eps_h(t));
+    % 4. calculate classification weight for intermediate classifier h(t)
+         alpha(t) = calc_weights(h_train(:,t), Y, 1, M, D);
          fprintf("Alpha %d = %f.\n", t, alpha(t));
+         if(~isfinite(alpha(t)))
+             break;
+         end       
 
-    % 6. Update training sample weights
+    % 5. Update training sample weights
          D=D.*exp((-1).*Y.*alpha(t).*h_train(t));
          D=D./sum(D);
-    sigma = sigma-2;
+    
+    % 6. Update sigma and trial number
+        sigma = sigma-step;
+        t = t+1;
     toc
 end
-    
-% final vote
-ada_train(:,1)=h_train*alpha;
-ada_train(ada_train<=5) = 0;
-ada_train(ada_train>5) = 1;
 
-% for test set
-ada_test(:,1)=h_test*alpha;
-ada_test(ada_test<=5) = 0;
-ada_test(ada_test>5) = 1;
+% set T = number of trials completed, and delete empty columns
+ T = t-1; 
+ alpha = alpha(1:T);
+ h_weights = h_weights(:,1:T);
+ h_model = h_model(1:T);
+
+    
+fprintf("Final votes for testing and training sets\n");
+tic
+H_train = zeros(M,T);
+H_test = zeros(size(testing_set, 1), T);
+for t = 1:T
+    H_train(:,t) = combo_predict(h_model{t}, training_set, N, h_weights(:,t));
+    H_test(:,t) = combo_predict(h_model{t}, testing_set, N, h_weights(:,t));
 end
 
-function predictions = combo_predict(models, testing_table, N)
+ada_train(:,1) = combine_classifiers(H_train, alpha);
+ada_test(:,1) = combine_classifiers(H_test, alpha);
+toc
+end
+
+% Calculate weights for classifiers based on their classification error
+function weights = calc_weights(trained_labels, class_labels, N, M, D)
+err = zeros(1,N);
+weights = zeros(1,N);
+   for n = 1:N
+        for m=1:M
+            if (trained_labels(m,n)~=class_labels(m))
+                err(n)=err(n)+D(m); 
+            end  
+        end
+        weights(n)=0.5*log((1-err(n))/err(n));
+   end
+
+end
+ 
+% Assign labels to data based on a weighted average of classifiers
+function combo_labels = combine_classifiers(trained_labels, weights)
+    combo_labels(:,1) = sign(sum(trained_labels*weights,2));
+    combo_labels(combo_labels==0) = 0;
+end
+
+% Produce classification output for a set of N weighted weak classifiers 
+function predictions = combo_predict(models, testing_table, N, weights)
     weak_predictions = zeros(size(testing_table,1),N);
     for f = 1:N
         Xtest = cell2mat(testing_table(:,f));
         weak_predictions(:,f) = predict(models{f}, Xtest);
     end
-    predictions = round(sum(weak_predictions*(1/N),2));
+    predictions = combine_classifiers(weak_predictions, weights);
 end
