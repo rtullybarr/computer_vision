@@ -60,8 +60,6 @@
             LBP_image_vectors(i, :) = dict.spatial_pyramid_matching(LBP_dictionary, LBP_features{i}, lambda);
         end
 
-        SIFT_image_vectors = zeros(length(LBP_features), img_vector_len);
-        for i = 1:length(LBP_features)
             % Use SPM to get a single image vector
             SIFT_image_vectors(i, :) = dict.spatial_pyramid_matching(SIFT_dictionary, SIFT_features{i}, lambda);
         end

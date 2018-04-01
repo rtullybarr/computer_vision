@@ -1,4 +1,4 @@
-function predictions = predict(model, feature_descriptors)
+function [predictions, scores] = predict(model, feature_descriptors)
 %SVM_PREDICT predict the label for each feature descriptor given.
     % feature descriptors: a Nxd set of feature descriptors, where 
     % d is the number of features in a feature descriptor and N is the
@@ -7,5 +7,5 @@ function predictions = predict(model, feature_descriptors)
     % returns: an Nx1 vector of labels. Each label corresponds to a
     % feature descriptor.
     
-    predictions = model.predict(feature_descriptors);
+    [predictions, scores] = model.predict(feature_descriptors);
 end

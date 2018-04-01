@@ -17,7 +17,8 @@ function siftFeatures = sift_features(img)
 cellsize = [4 4];       % 4x4 pixel cells
 blocksize = [4 4];      % 4x4 cell blocks
 numbins = 8;            % 8 orientations for histo
-stepsize = [0 0];       % 4 pixel step size (from paper) - corresponds to 3 overlapping blocks per feature calc
+stepsize = [0 0]; 
+% stepsize = [3 3];       % 4 pixel step size (from paper) - corresponds to 3 overlapping blocks per feature calc
 
 % SIFT Feature Dimensions
 [r, c] = size(img);
