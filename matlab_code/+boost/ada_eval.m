@@ -11,9 +11,9 @@ tic
     predictions = ada_predict(h_model, alpha, h_weights, testing_set);
 
     % evaluate results
-    TP = Y_test .* predictions; % both 1
-    FP = ~Y_test .* predictions; % Y_train was 0 but LBP_predictions was 1
-    FN = Y_test .* ~predictions; % Y_train was 1, but LBP_predictions was 0
+    TP = test_labels .* predictions; % both 1
+    FP = ~test_labels .* predictions; % test_labels was 0 but predictions was 1
+    FN = test_labels .* ~predictions; % test_labels was 1, but predictions was 0
 
     precision = sum(TP) / (sum(TP) + sum(FP))
     recall = sum(TP) / (sum(TP) + sum(FN))
