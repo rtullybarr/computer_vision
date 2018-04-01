@@ -17,12 +17,15 @@ function siftFeatures = sift_features(img)
 cellsize = [4 4];       % 4x4 pixel cells
 blocksize = [4 4];      % 4x4 cell blocks
 numbins = 8;            % 8 orientations for histo
-stepsize = [3 3];       % 4 pixel step size (from paper) - corresponds to 3 overlapping blocks per feature calc
+stepsize = [0 0]; 
+% stepsize = [3 3];       % 4 pixel step size (from paper) - corresponds to 3 overlapping blocks per feature calc
 
 % SIFT Feature Dimensions
 [r, c] = size(img);
-r = r/4 - 3;    % 3 = cellsize(1) - 1
-c = c/4 - 3;    % 3 = cellsize(2) - 1
+r = floor(r/16);
+c = floor(c/16);
+% r = r/4 - 3;    % 3 = cellsize(1) - 1
+% c = c/4 - 3;    % 3 = cellsize(2) - 1
 
 [siftFeatures, visualization] = extractHOGFeatures(img,'CellSize',cellsize, 'BlockSize', blocksize,...
    'NumBins', numbins, 'BlockOverlap', stepsize, 'UseSignedOrientation', true);
