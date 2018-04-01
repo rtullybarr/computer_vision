@@ -17,7 +17,7 @@
     
     all_images = [wildebeest; guineaFowl; hartebeest; giraffe];
     
-    for positive_class = 1:4
+    for positive_class = 3:4
         class_labels = zeros(length(all_images), 1);
         class_labels(species_masks == positive_class) = 1;
 
@@ -60,8 +60,6 @@
             LBP_image_vectors(i, :) = dict.spatial_pyramid_matching(LBP_dictionary, LBP_features{i}, lambda);
         end
 
-        SIFT_image_vectors = zeros(length(SIFT_features), img_vector_len);
-        for i = 1:length(SIFT_features)
             % Use SPM to get a single image vector
             SIFT_image_vectors(i, :) = dict.spatial_pyramid_matching(SIFT_dictionary, SIFT_features{i}, lambda);
         end
@@ -96,21 +94,21 @@
         [SIFT_precision, SIFT_recall] = svm.evaluate_model(SIFT_model, SIFT_X_test, Y_test);
 
         % find misclassified images and display them.
-        errors = find(Y_test ~= prediction);
-        err_indices = perm(errors + split + 1);
-        
-        for i = 1:length(err_indices)
-            imshow(all_images{err_indices(i)});
-        end
+    %     errors = find(Y_test ~= prediction);
+    %     err_indices = perm(errors + split + 1);
+    %     
+    %     for i = 1:length(err_indices)
+    %         imshow(all_images{err_indices(i)});
+    %     end
     
         % Save intermediate results: dictionary and image vectors.
 
-        suffix = [char(species_names(positive_class)) '_dictsize_' num2str(dictionary_size) '_iter_' num2str(dictionary_iterations) '_lambda_' num2str(lambda * 1000)];
+        suffix = [char(species_names(positive_class)) '_dictsize_' num2str(dictionary_size) '_iter_' num2str(dictionary_iterations) '_lambda_' num2str(lambda)];
     
-        save(['LBP_dict_' suffix], 'LBP_dictionary');
-        save(['LBP_img_vec_' suffix], 'LBP_image_vectors');
-        save(['SIFT_dict_' suffix], 'SIFT_dictionary');
-        save(['SIFT_img_vec_' suffix], 'SIFT_image_vectors');
+        save(['LPB_dict_' suffix], 'LBP_dictionary');
+        save(['LPB_img_vec_' suffix], 'LBP_image_vectors');
+        save(['SIFT_dict_' suffix], 'LBP_dictionary');
+        save(['SIFT_img_vec_' suffix], 'LBP_image_vectors');
         toc
      end
 %end
