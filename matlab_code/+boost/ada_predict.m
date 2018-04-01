@@ -7,10 +7,10 @@
 % testing set -> cell array of (M training samples) x (N feature types)
 
 function labels = ada_predict(model, alpha, h_weights, testing_set)
-    M = size(testing_set, 1); % number of training samples
-    N = size(testing_set, 2); % number of different feature types
-    T = size(weights, 2);     % number of intermediate classifiers, or trials used in ada_train  
-    H_test = zeros(M, T);     % set of predictions from each intermediate classifier  
+    M = size(testing_set, 1);   % number of training samples
+    N = size(testing_set, 2)-1; % number of different feature types, excluding class labels
+    T = size(weights, 2);       % number of intermediate classifiers, or trials used in ada_train  
+    H_test = zeros(M, T);       % set of predictions from each intermediate classifier  
     
     for t = 1:T
         H_test(:,t) = combo_predict(model{t}, training_set, N, h_weights(:,t));
