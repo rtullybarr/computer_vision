@@ -1,29 +1,29 @@
-function [ada_train, ada_test]= myadaboost(training_set, testing_set, trials)
+function [ada_labels, h_model, h_weights, alpha]= ada_train(training_set)
 % AdaBoost function 
-% training_table-> input: training set
+% training_table-> input: training set, cell array formatted as below
 %           feature_1 feature_2 ... feature_n class_labels
 %  sample 1   1xN1      1xN2    ...     1xNn       +1/-1 
 %  sample 2   1xN1      1xN2    ...     1xNn       +1/-1
 %   ...        ...      ...     ...     ...         ...
 %  sample M   1xN1      1xN2    ...     1xNn       +1/-1 
 %   
-% testing_table-> input: testing set (as above, w/o class_labels column)
-% trials-> input: number of trials to test (# intermediate classifiers)
-% ada_train-> label: training set
-% ada_test-> label: testing set
+% ada_labels-> labels for training set, 1/0 for yes/no
+% h_model -> intemediate classifiers, set of (N feature types)x(T trials) SVMs
+% h_weights -> NxT weights for SVMs in h_model
+% alpha -> T weights for intemediate classifers h_model(:,1:T)
 % Choosen Weak classifier: SVM
 
 % Initialize Variables
 M = size(training_set,1);     % number of training samples
 N = size(training_set,2)-1;   % number of feature types
-T = trials;                   % number of training trials
+T = 20    ;                   % maximum number of training trials
 D =(1/M)*ones(M,1);           % initial training sample weights  
 
 svm_model = cell(1, N);       % weak learners   
-svm_train = zeros(M,N);       % weak learner training outputs  
+svm_labels = zeros(M,N);       % weak learner training outputs  
 
 h_model = cell(T, 1);         % intermediate classifiers
-h_train = zeros(M,T);         % intermediate classifier training outputs 
+h_labels = zeros(M,T);         % intermediate classifier training outputs 
 h_weights = zeros(N,T);       % intermediate classifier weights   
 alpha = zeros(T,1);           % final classifier weights
 
@@ -43,7 +43,7 @@ for i = 1:N
 end
 
 sigma_min = mean(sigma_min_all);
-disp(sigma_min);
+%disp(sigma_min);
 
 sigma = T; % inital sigma
 step = 1;  % sigma decrease step
@@ -79,23 +79,23 @@ while (sigma > sigma_min) && (isfinite(alpha(t)))
             %fprintf("Training SVM %d out of %d\n", f, N);
             X = cell2mat(Sx(:,f));
             svm_model{f}=fitcsvm(X,Y,'KernelFunction','rbf', 'KernelScale', sigma);
-            svm_train(:,f)=predict(svm_model{f}, X);
+            svm_labels(:,f)=predict(svm_model{f}, X);
         end 
 
     % 3. intermediate classifier h(t) = linear combination of svm classifiers
         h_model{t} = svm_model;
-        h_weights(:,t) = calc_weights(svm_train, Y, N, M, D);
-        h_train(:,t) = combine_classifiers(svm_train, h_weights(:,t));
+        h_weights(:,t) = calc_weights(svm_labels, Y, N, M, D);
+        h_labels(:,t) = weighted_vote(svm_labels, h_weights(:,t));
 
     % 4. calculate classification weight for intermediate classifier h(t)
-         alpha(t) = calc_weights(h_train(:,t), Y, 1, M, D);
+         alpha(t) = calc_weights(h_labels(:,t), Y, 1, M, D);
          fprintf("Alpha %d = %f.\n", t, alpha(t));
          if(~isfinite(alpha(t)))
              break;
          end       
 
     % 5. Update training sample weights
-         D=D.*exp((-1).*Y.*alpha(t).*h_train(t));
+         D=D.*exp((-1).*Y.*alpha(t).*h_labels(t));
          D=D./sum(D);
     
     % 6. Update sigma and trial number
@@ -113,15 +113,13 @@ end
     
 fprintf("Final votes for testing and training sets\n");
 tic
-H_train = zeros(M,T);
-H_test = zeros(size(testing_set, 1), T);
+H_labels = zeros(M,T);
 for t = 1:T
-    H_train(:,t) = combo_predict(h_model{t}, training_set, N, h_weights(:,t));
-    H_test(:,t) = combo_predict(h_model{t}, testing_set, N, h_weights(:,t));
+    H_labels(:,t) = combo_predict(h_model{t}, training_set, N, h_weights(:,t));
 end
 
-ada_train(:,1) = combine_classifiers(H_train, alpha);
-ada_test(:,1) = combine_classifiers(H_test, alpha);
+ada_labels(:,1) = weighted_vote(H_labels, alpha);
+ada_labels(ada_labels == -1) = 0;
 toc
 end
 
@@ -141,7 +139,7 @@ weights = zeros(1,N);
 end
  
 % Assign labels to data based on a weighted average of classifiers
-function combo_labels = combine_classifiers(trained_labels, weights)
+function combo_labels = weighted_vote(trained_labels, weights)
     combo_labels(:,1) = sign(sum(trained_labels*weights,2));
     combo_labels(combo_labels==0) = 0;
 end
@@ -153,5 +151,5 @@ function predictions = combo_predict(models, testing_table, N, weights)
         Xtest = cell2mat(testing_table(:,f));
         weak_predictions(:,f) = predict(models{f}, Xtest);
     end
-    predictions = combine_classifiers(weak_predictions, weights);
+    predictions = weighted_vote(weak_predictions, weights);
 end
