@@ -74,7 +74,7 @@
         % permutation
         perm = randperm(length(class_labels));
 
-        % 80% train, 20% test
+        % 70% train, 30% test
         split = floor(length(class_labels) * 0.7);
 
         % training set
