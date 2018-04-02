@@ -16,19 +16,22 @@ function [ada_labels, h_model, h_weights, alpha]= ada_train(training_set)
 % Initialize Variables
 M = size(training_set,1);     % number of training samples
 N = size(training_set,2)-1;   % number of feature types
-T = 20    ;                   % maximum number of training trials
+T = 15;                       % maximum number of training trials
 D =(1/M)*ones(M,1);           % initial training sample weights  
+Y_train = cell2mat(training_set(:,N+1)); % class labels in original order
 
 svm_model = cell(1, N);       % weak learners   
 svm_labels = zeros(M,N);       % weak learner training outputs  
 
 h_model = cell(T, 1);         % intermediate classifiers
-h_labels = zeros(M,T);         % intermediate classifier training outputs 
+h_labels = zeros(M,T);        % intermediate classifier training outputs 
 h_weights = zeros(N,T);       % intermediate classifier weights   
 alpha = zeros(T,1);           % final classifier weights
 
 difficult_data = cell(0);     % data with weights above a threshold, difficult to classify, and selected more often over the boosting process
 S = cell(M,N+1);              % weighted training set
+indexes = [];                 % indexes of the difficult data  
+sampleNums = zeros(M,1);      % indexes of the samples used in each trial  
 
 % Calculate the average minimal distance between any two training samples
 sigma_min_all = zeros(N,1);
@@ -63,10 +66,14 @@ while (sigma > sigma_min) && (isfinite(alpha(t)))
                 p = (p_max-p_min)*rand(1) + p_min;
                 if D(i)>=p
                     difficult_data(end+1,:)=training_set(i,:);
+                    indexes(end+1) = i;
                 end
-
+            end
+            
+            for i = 1:M
                 % select random row of difficult_data, add to training set S 
                 n=randi(size(difficult_data,1)); 
+                sampleNums(i) = indexes(n);
                 S(i,:) = difficult_data(n,:);
             end
 
@@ -89,14 +96,13 @@ while (sigma > sigma_min) && (isfinite(alpha(t)))
 
     % 4. calculate classification weight for intermediate classifier h(t)
          alpha(t) = calc_weights(h_labels(:,t), Y, 1, M, D);
-         fprintf("Alpha %d = %f.\n", t, alpha(t));
-         if(~isfinite(alpha(t)))
-             break;
-         end       
+         fprintf("Alpha %d = %f.\n", t, alpha(t));      
 
-    % 5. Update training sample weights
-         D=D.*exp((-1).*Y.*alpha(t).*h_labels(t));
-         D=D./sum(D);
+    % 5. Update training sample weights 
+        if isfinite(alpha(t))
+             D(sampleNums)=D(sampleNums).*exp((-1).*Y_train(sampleNums).*alpha(t).*h_labels(t));
+             D=D./sum(D);
+        end
     
     % 6. Update sigma and trial number
         sigma = sigma-step;
@@ -106,11 +112,24 @@ end
 
 % set T = number of trials completed, and delete empty columns
  T = t-1; 
- alpha = alpha(1:T);
  h_weights = h_weights(:,1:T);
  h_model = h_model(1:T);
-
-    
+ alpha = alpha(1:T);
+ 
+ % Discard trials where alpha == Inf or Nan
+ h_weights(:,~isfinite(alpha)) = [];
+ h_model(~isfinite(alpha)) = [];
+ alpha(~isfinite(alpha)) = [];
+ 
+ % Discard trials where alpha(t) is less than the average alpha
+ a_avg = mean(alpha);
+ h_weights(:,alpha<a_avg) = [];
+ h_model(alpha<a_avg) = [];
+ alpha(alpha<a_avg) = [];
+ 
+ % total number of intemediate classifiers left
+ T = length(alpha);
+  
 fprintf("Final votes for testing and training sets\n");
 tic
 H_labels = zeros(M,T);
