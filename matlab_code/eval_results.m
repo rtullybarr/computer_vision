@@ -47,10 +47,10 @@ fprintf("Training SVMs.\n");
 tic
 % SVM training and testing
 % permutation
-perm = randperm(length(class_labels));
+perm = randperm(length(all_images));
 
 % 70% train, 30% test
-split = floor(length(class_labels) * 0.7);
+split = floor(length(all_images) * 0.7);
 
 % training data
 LBP_X_train = LBP_image_vectors(perm(1:split), :);
@@ -62,11 +62,11 @@ SIFT_X_test = SIFT_image_vectors(perm(split + 1:end), :);
 LBP_models = cell(num_species, 1);
 SIFT_models = cell(num_species, 1);
 
-LBP_scores = zeros(length(class_labels) - split, num_species);
-SIFT_scores = zeros(length(class_labels) - split, num_species);
+LBP_scores = zeros(length(all_images) - split, num_species);
+SIFT_scores = zeros(length(all_images) - split, num_species);
 
-LBP_predictions = zeros(length(class_labels) - split, num_species);
-SIFT_predictions = zeros(length(class_labels) - split, num_species);
+LBP_predictions = zeros(length(all_images) - split, num_species);
+SIFT_predictions = zeros(length(all_images) - split, num_species);
 
 for positive_class = 1:num_species
     % set up class labels
@@ -105,5 +105,8 @@ end
 % get ground truth
 ground_truth = species_masks(perm(split + 1:end));
 
-confusionmat(LBP_classes, ground_truth)
-confusionmat(SIFT_classes, ground_truth)
+% display confusion matrices
+LBP_matrix = confusionmat(LBP_classes, ground_truth);
+plot_confusion_matrix(LBP_matrix);
+
+SIFT_matrix = confusionmat(SIFT_classes, ground_truth);
