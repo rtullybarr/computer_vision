@@ -1,6 +1,9 @@
 % Run this script to train the SVMs and see the classification results.
 % Separated from main as a time-saving measure.
 
+% reproducibility
+rng(1);
+
 % some constants
 num_species = 4;
 % determines feature selection method to be used.
@@ -17,25 +20,27 @@ species_masks = [ones(length(wildebeest), 1); ones(length(guineaFowl), 1) .* 2; 
 all_images = [wildebeest; guineaFowl; hartebeest; giraffe];
 
 % Step 2: load intermediate results.
-LBP_features = cell(num_species, 1);
+% temp = cell(num_species, 1);
 load('intermediate_results/LBP_img_vec_wildebeest_dictsize_128_iter_10_lambda_26.mat');
-LBP_features{1} = LBP_image_vectors;
-load('intermediate_results/LBP_img_vec_guineaFowl_dictsize_128_iter_10_lambda_26.mat');
-LBP_features{2} = LBP_image_vectors;
-load('intermediate_results/LBP_img_vec_hartebeest_dictsize_128_iter_10_lambda_26.mat');
-LBP_features{3} = LBP_image_vectors;
-load('intermediate_results/LBP_img_vec_giraffe_dictsize_128_iter_10_lambda_26.mat');
-LBP_features{4} = LBP_image_vectors;
+% temp{1} = LBP_image_vectors;
+% load('intermediate_results/LBP_img_vec_guineaFowl_dictsize_128_iter_10_lambda_26.mat');
+% temp{2} = LBP_image_vectors;
+% load('intermediate_results/LBP_img_vec_hartebeest_dictsize_128_iter_10_lambda_26.mat');
+% temp{3} = LBP_image_vectors;
+% load('intermediate_results/LBP_img_vec_giraffe_dictsize_128_iter_10_lambda_26.mat');
+% temp{4} = LBP_image_vectors;
+% LBP_image_vectors = vertcat(temp{:});
 
-SIFT_features = cell(num_species, 1);
-load('intermediate_results/SIFT_img_vec_wildebeest_dictsize_128_iter_10_lambda_26');
-SIFT_features{1} = SIFT_image_vectors;
-load('intermediate_results/SIFT_img_vec_guineaFowl_dictsize_128_iter_10_lambda_26');
-SIFT_features{2} = SIFT_image_vectors;
-load('intermediate_results/SIFT_img_vec_hartebeest_dictsize_128_iter_10_lambda_26');
-SIFT_features{3} = SIFT_image_vectors;
-load('intermediate_results/SIFT_img_vec_giraffe_dictsize_128_iter_10_lambda_26');
-SIFT_features{4} = SIFT_image_vectors;
+% temp = cell(num_species, 1);
+load('intermediate_results/SIFT_img_vec_wildebeest_dictsize_128_iter_10_lambda_26.mat');
+% temp{1} = SIFT_image_vectors;
+% load('intermediate_results/SIFT_img_vec_guineaFowl_dictsize_128_iter_10_lambda_26.mat');
+% temp{2} = SIFT_image_vectors;
+% load('intermediate_results/SIFT_img_vec_hartebeest_dictsize_128_iter_10_lambda_26.mat');
+% temp{3} = SIFT_image_vectors;
+% load('intermediate_results/SIFT_img_vec_giraffe_dictsize_128_iter_10_lambda_26.mat');
+% temp{4} = SIFT_image_vectors;
+% SIFT_image_vectors = vertcat(temp{:});
 
 % step 3: train one vs. all SVMs.
 fprintf("Training SVMs.\n");
@@ -47,13 +52,23 @@ perm = randperm(length(class_labels));
 % 70% train, 30% test
 split = floor(length(class_labels) * 0.7);
 
+% training data
+LBP_X_train = LBP_image_vectors(perm(1:split), :);
+LBP_X_test = LBP_image_vectors(perm(split + 1:end), :);
+
+SIFT_X_train = SIFT_image_vectors(perm(1:split), :);
+SIFT_X_test = SIFT_image_vectors(perm(split + 1:end), :);
+    
 LBP_models = cell(num_species, 1);
 SIFT_models = cell(num_species, 1);
 
-LBP_scores = zeros(num_species, length(class_labels) - split);
-SIFT_scores = zeros(num_species, length(class_labels) - split);
-    
-for i = 1:num_species
+LBP_scores = zeros(length(class_labels) - split, num_species);
+SIFT_scores = zeros(length(class_labels) - split, num_species);
+
+LBP_predictions = zeros(length(class_labels) - split, num_species);
+SIFT_predictions = zeros(length(class_labels) - split, num_species);
+
+for positive_class = 1:num_species
     % set up class labels
     class_labels = zeros(length(all_images), 1);
     class_labels(species_masks == positive_class) = 1;
@@ -61,32 +76,34 @@ for i = 1:num_species
     Y_train = class_labels(perm(1:split));
     Y_test = class_labels(perm(split + 1:end));
 
-    % training set
-    LBP_X_train = LBP_features{i}(perm(1:split), :);
-    LBP_X_test = LBP_features{i}(perm(split + 1:end), :);
-
-    SIFT_X_train = SIFT_features{i}(perm(1:split), :);
-    SIFT_X_test = SIFT_features{i}(perm(split + 1:end), :);
-
     % LBP
-    LBP_models{i} = svm.train(LBP_X_train, Y_train);
-    % predictions - should be two scores for each image
-    [predictions, scores] = svm.predict(LBP_models{i}, LBP_X_test);
-    svm.score_predictions(predictions, Y_test)
-    LBP_scores(i, :) = scores(:, 2);
+    model = svm.train(LBP_X_train, Y_train);
+    % Finds a function to convert from scores to probabilities.
+    model = fitPosterior(model);
+    [predictions, scores] = svm.predict(model, LBP_X_test);
+    [LBP_precision, LBP_recall, LBP_confusion_matrix] = svm.score_predictions(predictions, Y_test)
+    
+    LBP_models{positive_class} = model;
+    LBP_scores(:, positive_class) = scores(:, 2);
+    LBP_predictions(:, positive_class) = predictions;
     
     % SIFT
-    SIFT_models{i} = svm.train(SIFT_X_train, Y_train);
-    [predictions, scores] = svm.predict(LBP_models{i}, SIFT_X_test);
-    svm.score_predictions(predictions, Y_test)
-    SIFT_scores(i, :) = scores(:, 2);
+    model = svm.train(SIFT_X_train, Y_train);
+    model = fitPosterior(model);
+    [predictions, scores] = svm.predict(model, SIFT_X_test);
+    [SIFT_precision, SIFT_recall, SIFT_confusion_matrix] = svm.score_predictions(predictions, Y_test)
+    
+    SIFT_models{positive_class} = model;
+    SIFT_scores(:, positive_class) = scores(:, 2);
+    SIFT_predictions(:, positive_class) = predictions;
 end
 
 % combine results
-[~, LBP_classes] = max(LBP_scores, [], 1);
-[~, SIFT_classes] = max(SIFT_scores, [], 1);
+[~, LBP_classes] = max(LBP_scores, [], 2);
+[~, SIFT_classes] = max(SIFT_scores, [], 2);
 
 % get ground truth
-ground_truth = species_masks(perm(split + 1:end), :);
-confusionmat(LBP_classes, ground_truth);
-confusionmat(SIFT_classes, ground_truth);
+ground_truth = species_masks(perm(split + 1:end));
+
+confusionmat(LBP_classes, ground_truth)
+confusionmat(SIFT_classes, ground_truth)
