@@ -70,12 +70,9 @@ for l = 1:length(lambdas)
     toc
 
 
-    suffix = [char(species_names(positive_class)) '_dictsize_' num2str(dictionary_size) '_iter_' num2str(dictionary_iterations) '_lambda_' num2str(lambda) * 100];
+    name = ['dictsize_' num2str(dictionary_size) '_iter_' num2str(dictionary_iterations) '_lambda_' num2str(lambda * 1000)];
 
-    save(['LPB_dict_' suffix], 'LBP_dictionary');
-    save(['LPB_img_vec_' suffix], 'LBP_image_vectors');
-    save(['SIFT_dict_' suffix], 'SIFT_dictionary');
-    save(['SIFT_img_vec_' suffix], 'SIFT_image_vectors');
+    save(name, 'LBP_dictionary', 'LBP_image_vectors', 'SIFT_dictionary', 'SIFT_image_vectors');
     toc
 
 end
