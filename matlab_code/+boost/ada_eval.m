@@ -1,14 +1,36 @@
-function [precision, recall] = ada_eval(LBP_train, LBP_test, SIFT_train, SIFT_test, test_labels, train_labels) 
+function [precision, recall] = ada_eval(LBP_train, LBP_test, SIFT_train, SIFT_test, test_labels, train_labels, mode) 
 tic
     % prep data for adaboost
     training_set = boost.ada_prep(LBP_train, SIFT_train, train_labels);
     testing_set = boost.ada_prep(LBP_test, SIFT_test, test_labels);
     
     % Create adaboosted classifer
-    [ada_labels, h_model, h_weights, alpha]= boost.ada_train(training_set);
+    [ada_labels, h_model, h_weights, alpha]= boost.ada_train(training_set, mode);
     
-    % Test adaboosted classifier
-    predictions = boost.ada_predict(h_model, alpha, h_weights, testing_set);
+    % Evaluate classifier on test data
+    TP = train_labels .* ada_labels; % both 1
+    FP = ~train_labels .* ada_labels; % test_labels was 0 but predictions was 1
+    FN = train_labels .* ~ada_labels; % test_labels was 1, but predictions was 0
+
+    precision = sum(TP) / (sum(TP) + sum(FP));
+    recall = sum(TP) / (sum(TP) + sum(FN));
+    
+    fprintf("ada_labels: precision = %f, recall = %f\n", precision, recall);
+    
+    % Evaluate classifier on training data with ada_predict
+    ada_labels2 = boost.ada_predict(h_model, alpha, h_weights, training_set, mode);
+    
+    TP = train_labels .* ada_labels2; % both 1
+    FP = ~train_labels .* ada_labels2; % test_labels was 0 but predictions was 1
+    FN = train_labels .* ~ada_labels2; % test_labels was 1, but predictions was 0
+
+    precision = sum(TP) / (sum(TP) + sum(FP));
+    recall = sum(TP) / (sum(TP) + sum(FN));
+    
+    fprintf("ada_labels2: precision = %f, recall = %f\n", precision, recall);
+    
+    % Test adaboosted classifier on test data
+    predictions = boost.ada_predict(h_model, alpha, h_weights, testing_set, mode);
 
     % evaluate results
     TP = test_labels .* predictions; % both 1
@@ -17,5 +39,7 @@ tic
 
     precision = sum(TP) / (sum(TP) + sum(FP));
     recall = sum(TP) / (sum(TP) + sum(FN));
+    
+    fprintf("predictions: precision = %f, recall = %f\n", precision, recall);
 toc
 end
