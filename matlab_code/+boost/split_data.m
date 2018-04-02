@@ -1,4 +1,4 @@
-function [LBP_train, LBP_test, SIFT_train, SIFT_test, test_labels, train_labels] = split_data(LBP_image_vectors, SIFT_image_vectors, class_labels)% permutation
+function [LBP_train, LBP_test, SIFT_train, SIFT_test, test_labels, train_labels] = split_data(LBP_image_vectors, SIFT_image_vectors, class_labels)
         
         perm = randperm(length(class_labels));
 

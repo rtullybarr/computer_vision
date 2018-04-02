@@ -14,12 +14,15 @@ function labels = ada_predict(model, alpha, h_weights, testing_set, mode)
     H_test = zeros(M, T);       % set of predictions from each intermediate classifier  
     
     for t = 1:T
-        H_test(:,t) = combo_predict(model{t}, h_weights(:,t), testing_set, N, mode);
+        H_test(:,t) = combo_predict(model{t}, h_weights(:,t), testing_set, N, "labels");
     end
     
     labels(:,1) = weighted_vote(H_test, alpha, mode);
     if mode == "labels"
         labels(labels == -1) = 0;
+    else
+        labels = labels+abs(min(labels));
+        labels = labels/max(labels);
     end
         
 end
@@ -37,10 +40,8 @@ end
 function combo_labels = weighted_vote(trained_labels, weights, mode)
     if mode == "labels"
         combo_labels(:,1) = sign(sum(trained_labels*weights,2));
-        combo_labels(combo_labels==0) = -1;
+        combo_labels(combo_labels==0) = 1;
     else
         combo_labels(:,1) = sum(trained_labels*weights,2);
-        combo_labels = combo_labels+abs(min(combo_labels));
-        combo_labels = combo_labels/max(combo_labels);
     end
 end
