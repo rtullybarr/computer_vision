@@ -8,7 +8,7 @@ rng(1);
 num_species = 4;
 % determines feature selection method to be used.
 
-% Step 1: load images and set up class labels.
+% Step 1: load images.
 wildebeest = preprocess(get_image_filenames('wildebeest', '*.jpg'), [256 256]);
 guineaFowl = preprocess(get_image_filenames('guineaFowl', '*.jpg'), [256 256]);
 hartebeest = preprocess(get_image_filenames('hartebeest', '*.jpg'), [256 256]);
@@ -20,27 +20,15 @@ species_masks = [ones(length(wildebeest), 1); ones(length(guineaFowl), 1) .* 2; 
 all_images = [wildebeest; guineaFowl; hartebeest; giraffe];
 
 % Step 2: load intermediate results.
-% temp = cell(num_species, 1);
 load('intermediate_results/LBP_img_vec_wildebeest_dictsize_128_iter_10_lambda_26.mat');
-% temp{1} = LBP_image_vectors;
-% load('intermediate_results/LBP_img_vec_guineaFowl_dictsize_128_iter_10_lambda_26.mat');
-% temp{2} = LBP_image_vectors;
-% load('intermediate_results/LBP_img_vec_hartebeest_dictsize_128_iter_10_lambda_26.mat');
-% temp{3} = LBP_image_vectors;
-% load('intermediate_results/LBP_img_vec_giraffe_dictsize_128_iter_10_lambda_26.mat');
-% temp{4} = LBP_image_vectors;
-% LBP_image_vectors = vertcat(temp{:});
+%load('intermediate_results/LBP_img_vec_guineaFowl_dictsize_128_iter_10_lambda_26.mat');
+%load('intermediate_results/LBP_img_vec_hartebeest_dictsize_128_iter_10_lambda_26.mat');
+%load('intermediate_results/LBP_img_vec_giraffe_dictsize_128_iter_10_lambda_26.mat');
 
-% temp = cell(num_species, 1);
 load('intermediate_results/SIFT_img_vec_wildebeest_dictsize_128_iter_10_lambda_26.mat');
-% temp{1} = SIFT_image_vectors;
-% load('intermediate_results/SIFT_img_vec_guineaFowl_dictsize_128_iter_10_lambda_26.mat');
-% temp{2} = SIFT_image_vectors;
-% load('intermediate_results/SIFT_img_vec_hartebeest_dictsize_128_iter_10_lambda_26.mat');
-% temp{3} = SIFT_image_vectors;
-% load('intermediate_results/SIFT_img_vec_giraffe_dictsize_128_iter_10_lambda_26.mat');
-% temp{4} = SIFT_image_vectors;
-% SIFT_image_vectors = vertcat(temp{:});
+%load('intermediate_results/SIFT_img_vec_guineaFowl_dictsize_128_iter_10_lambda_26.mat');
+%load('intermediate_results/SIFT_img_vec_hartebeest_dictsize_128_iter_10_lambda_26.mat');
+%load('intermediate_results/SIFT_img_vec_giraffe_dictsize_128_iter_10_lambda_26.mat');
 
 % step 3: train one vs. all SVMs.
 fprintf("Training SVMs.\n");
@@ -81,8 +69,7 @@ for positive_class = 1:num_species
     % Finds a function to convert from scores to probabilities.
     model = fitPosterior(model);
     [predictions, scores] = svm.predict(model, LBP_X_test);
-    [LBP_precision, LBP_recall, LBP_confusion_matrix] = svm.score_predictions(predictions, Y_test)
-    
+
     LBP_models{positive_class} = model;
     LBP_scores(:, positive_class) = scores(:, 2);
     LBP_predictions(:, positive_class) = predictions;
@@ -91,22 +78,37 @@ for positive_class = 1:num_species
     model = svm.train(SIFT_X_train, Y_train);
     model = fitPosterior(model);
     [predictions, scores] = svm.predict(model, SIFT_X_test);
-    [SIFT_precision, SIFT_recall, SIFT_confusion_matrix] = svm.score_predictions(predictions, Y_test)
-    
+
     SIFT_models{positive_class} = model;
     SIFT_scores(:, positive_class) = scores(:, 2);
     SIFT_predictions(:, positive_class) = predictions;
 end
 
 % combine results
-[~, LBP_classes] = max(LBP_scores, [], 2);
-[~, SIFT_classes] = max(SIFT_scores, [], 2);
+[~, LBP_labels] = max(LBP_scores, [], 2);
+[~, SIFT_labels] = max(SIFT_scores, [], 2);
+
+% add fifth class for if all four models predicted '0'?
+% temp = sum(LBP_predictions, 2);
+% LBP_labels(~temp) = 5;
+% 
+% temp = sum(SIFT_predictions, 2);
+% SIFT_labels(~temp) = 5;
 
 % get ground truth
 ground_truth = species_masks(perm(split + 1:end));
 
-% display confusion matrices
-LBP_matrix = confusionmat(LBP_classes, ground_truth);
-plot_confusion_matrix(LBP_matrix);
+% get results
+[LBP_precision_scores, LBP_recall_scores, LBP_confmat] = svm.score_predictions(ground_truth, LBP_labels);
+[SIFT_precision_scores, SIFT_recall_scores, SIFT_confmat] = svm.score_predictions(ground_truth, SIFT_labels);
 
-SIFT_matrix = confusionmat(SIFT_classes, ground_truth);
+% summarize results
+LBP_precision = sum(LBP_precision_scores) / 4
+LBP_recall = sum(LBP_recall_scores) / 4
+
+SIFT_precision = sum(SIFT_precision_scores) / 4
+SIFT_recall = sum(SIFT_recall_scores) / 4
+
+% average accuracy
+LBP_avg_accuracy = length(ground_truth(ground_truth == LBP_labels)) / length(ground_truth)
+SIFT_avg_accuracy = length(ground_truth(ground_truth == SIFT_labels)) / length(ground_truth)
