@@ -88,13 +88,6 @@ end
 [~, LBP_labels] = max(LBP_scores, [], 2);
 [~, SIFT_labels] = max(SIFT_scores, [], 2);
 
-% add fifth class for if all four models predicted '0'?
-% temp = sum(LBP_predictions, 2);
-% LBP_labels(~temp) = 5;
-% 
-% temp = sum(SIFT_predictions, 2);
-% SIFT_labels(~temp) = 5;
-
 % get ground truth
 ground_truth = species_masks(perm(split + 1:end));
 
@@ -112,3 +105,21 @@ SIFT_recall = sum(SIFT_recall_scores) / 4
 % average accuracy
 LBP_avg_accuracy = length(ground_truth(ground_truth == LBP_labels)) / length(ground_truth)
 SIFT_avg_accuracy = length(ground_truth(ground_truth == SIFT_labels)) / length(ground_truth)
+
+% add fifth class for if all four models predicted '0'
+temp = sum(LBP_predictions, 2);
+LBP_labels(~temp) = 5;
+
+temp = sum(SIFT_predictions, 2);
+SIFT_labels(~temp) = 5;
+
+[LBP_precision_scores, LBP_recall_scores, LBP_confmat] = svm.score_predictions(ground_truth, LBP_labels);
+[SIFT_precision_scores, SIFT_recall_scores, SIFT_confmat] = svm.score_predictions(ground_truth, SIFT_labels);
+
+% find images that were classified as '5' (not recognized by any
+% classifier) and display them.
+err_indices = perm(split + 1 + find(LBP_labels == 5));
+for i = 1:length(err_indices)
+    subplot(ceil(sqrt(length(err_indices))), ceil(sqrt(length(err_indices))), i);
+    imshow(all_images{err_indices(i)});
+end
