@@ -10,6 +10,6 @@ function model = train(feature_descriptors, labels, training_type)
         model = crossval(model);
     end
     
-    
+
 end
 
