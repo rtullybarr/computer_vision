@@ -7,6 +7,9 @@ rng(1);
 % some constants
 num_species = 4;
 
+% timing
+tic
+
 % Step 1: load images.
 wildebeest = preprocess(get_image_filenames('wildebeest', '*.jpg'), [256 256]);
 guineaFowl = preprocess(get_image_filenames('guineaFowl', '*.jpg'), [256 256]);
@@ -23,7 +26,6 @@ load('intermediate_results/trial_1_dictsize_128_iter_10_lambda_26.mat');
 
 % step 3: train one vs. all SVMs.
 fprintf("Training SVMs.\n");
-tic
 
 % permutation
 num_samples = size(all_images, 1);
@@ -165,3 +167,5 @@ plot_CM(SIFT_confmat, 4);
 title('SIFT Confusion Matrix')
 plot_CM(BOOST_confmat, 4);
 title('AdaBoost Confusion Matrix')
+
+toc

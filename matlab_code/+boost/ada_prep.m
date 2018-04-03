@@ -1,7 +1,7 @@
 % Prepare data for Gentleboosting
 function ada_data = ada_prep(LBP_samples, SIFT_samples, class_labels)
-    fprintf("Fomatting image vectors for adaptive boosting\n");
-    tic
+    %fprintf("Fomatting image vectors for adaptive boosting\n");
+    %tic
 
     % split into pyramid levels
     LBP1 = LBP_samples(:,1:128);
@@ -18,6 +18,6 @@ function ada_data = ada_prep(LBP_samples, SIFT_samples, class_labels)
     % format data sets as cell arrays
     ada_data = [num2cell(LBP1,2), num2cell(LBP2,2), num2cell(LBP3,2), ...
         num2cell(SIFT1,2), num2cell(SIFT2,2), num2cell(SIFT3,2),num2cell(class_labels,2)];
-    toc
+    %toc
 end
 
