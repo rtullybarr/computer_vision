@@ -33,65 +33,29 @@ load('intermediate_results/SIFT_img_vec_wildebeest_dictsize_128_iter_10_lambda_2
 % step 3: train one vs. all SVMs.
 fprintf("Training SVMs.\n");
 tic
-% SVM training and testing
+
 % permutation
-perm = randperm(length(all_images));
+num_samples = size(all_images, 1);
+perm = randperm(num_samples);
 
 % 70% train, 30% test
-split = floor(length(all_images) * 0.7);
+split = floor(num_samples * 0.7);
 
-% training data
-LBP_X_train = LBP_image_vectors(perm(1:split), :);
-LBP_X_test = LBP_image_vectors(perm(split + 1:end), :);
+LBP_models = train_onevsall_models(LBP_image_vectors, perm(1:split), species_masks, 4);
+SIFT_models = train_onevsall_models(SIFT_image_vectors, perm(1:split), species_masks, 4);
+% boosted_models = ?;
 
-SIFT_X_train = SIFT_image_vectors(perm(1:split), :);
-SIFT_X_test = SIFT_image_vectors(perm(split + 1:end), :);
-    
-LBP_models = cell(num_species, 1);
-SIFT_models = cell(num_species, 1);
-
-LBP_scores = zeros(length(all_images) - split, num_species);
-SIFT_scores = zeros(length(all_images) - split, num_species);
-
-LBP_predictions = zeros(length(all_images) - split, num_species);
-SIFT_predictions = zeros(length(all_images) - split, num_species);
-
-for positive_class = 1:num_species
-    % set up class labels
-    class_labels = zeros(length(all_images), 1);
-    class_labels(species_masks == positive_class) = 1;
-    
-    Y_train = class_labels(perm(1:split));
-    Y_test = class_labels(perm(split + 1:end));
-
-    % LBP
-    model = svm.train(LBP_X_train, Y_train);
-    % Finds a function to convert from scores to probabilities.
-    model = fitPosterior(model);
-    [predictions, scores] = svm.predict(model, LBP_X_test);
-
-    LBP_models{positive_class} = model;
-    LBP_scores(:, positive_class) = scores(:, 2);
-    LBP_predictions(:, positive_class) = predictions;
-    
-    % SIFT
-    model = svm.train(SIFT_X_train, Y_train);
-    model = fitPosterior(model);
-    [predictions, scores] = svm.predict(model, SIFT_X_test);
-
-    SIFT_models{positive_class} = model;
-    SIFT_scores(:, positive_class) = scores(:, 2);
-    SIFT_predictions(:, positive_class) = predictions;
-end
-
-% combine results
-[~, LBP_labels] = max(LBP_scores, [], 2);
-[~, SIFT_labels] = max(SIFT_scores, [], 2);
-
-% get ground truth
+% testing data
+LBP_test = LBP_image_vectors(perm(split + 1:end), :);
+SIFT_test = SIFT_image_vectors(perm(split + 1:end), :);
+% get ground truth class labels for testing data
 ground_truth = species_masks(perm(split + 1:end));
 
-% get results
+% make predictions
+[LBP_labels, LBP_probabilities, LBP_predictions] = predict_multiclass(LBP_models, LBP_test);
+[SIFT_labels, SIFT_probabilities, SIFT_predictions] = predict_multiclass(SIFT_models, SIFT_test);
+
+% score predictions
 [LBP_precision_scores, LBP_recall_scores, LBP_confmat] = svm.score_predictions(ground_truth, LBP_labels);
 [SIFT_precision_scores, SIFT_recall_scores, SIFT_confmat] = svm.score_predictions(ground_truth, SIFT_labels);
 
@@ -106,7 +70,7 @@ SIFT_recall = sum(SIFT_recall_scores) / 4
 LBP_avg_accuracy = length(ground_truth(ground_truth == LBP_labels)) / length(ground_truth)
 SIFT_avg_accuracy = length(ground_truth(ground_truth == SIFT_labels)) / length(ground_truth)
 
-% add fifth class for if all four models predicted '0'
+% add fifth class for when all four models predict '0'
 temp = sum(LBP_predictions, 2);
 LBP_labels(~temp) = 5;
 
@@ -120,6 +84,5 @@ SIFT_labels(~temp) = 5;
 % classifier) and display them.
 err_indices = perm(split + 1 + find(LBP_labels == 5));
 for i = 1:length(err_indices)
-    subplot(ceil(sqrt(length(err_indices))), ceil(sqrt(length(err_indices))), i);
-    imshow(all_images{err_indices(i)});
+    figure; imshow(all_images{err_indices(i)});
 end
