@@ -153,13 +153,21 @@ end
 % Calculate weights for classifiers based on their classification error
 function weights = calc_weights(trained_labels, class_labels, N, M, D)
     err = zeros(1,N);
+%     p0 = zeros(1,N);
+%     p1 = zeros(1,N);
     weights = zeros(1,N);
        for n = 1:N
             for m=1:M
                 if (trained_labels(m,n)~=class_labels(m))
                     err(n)=err(n)+D(m); 
                 end  
+%                   if(trained_labels(m,n)~=class_labels(m))
+%                       p0(n) = p0(n)+D(m);
+%                   else
+%                       p1(n) = p1(n)+D(m);
+%                   end    
             end
+%             weights(n) = p1(n)-p0(n);
             weights(n)=0.5*log((1-err(n))/err(n));
        end
 end
