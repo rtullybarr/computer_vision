@@ -1,4 +1,4 @@
-function CM_labelled = plot_CM(CM)
+%function CM_labelled = plot_CM(CM)
 % Takes a 4x4 confusion matrix and displays a color coded and labelled
 % image. 
 % **NOTE: For a good quality image you have to maximize the figure. Otherwise
@@ -7,6 +7,8 @@ function CM_labelled = plot_CM(CM)
 % *Note: This could take larger confusion matrices, but the labelling would
 % have to be changed.
 %
+
+CM = LBP_matrix;
     
 % Initialize variables
 cmap = ones(50,3);
@@ -67,7 +69,7 @@ for i = 1:r_cm
         positions(ind,2) = c_increment*(j-0.5);
         
         % Round to 3 decimal places
-        values{ind} = num2str(round(CM_norm(i,j)*1000)/1000);
+        values{ind} = num2str(round(CM_norm(j,i)*1000)/1000);
         
         if i == j
             txtColor(ind, :) = [1 1 1];
@@ -103,6 +105,6 @@ xticklabels(labels)
 yticklabels(labels)
 set(gca,'xaxisLocation','top')
 
-end
+%end
 
 
