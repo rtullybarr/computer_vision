@@ -6,6 +6,10 @@ tic
     
     % Create adaboosted classifer
     [ada_labels, h_model, h_weights, alpha]= boost.ada_train(training_set, mode);
+    if mode == "scores"
+        ada_labels(ada_labels<mean(ada_labels)) = 0;
+        ada_labels(ada_labels>=mean(ada_labels)) = 1;
+    end
     
     % Evaluate classifier on test data
     TP = train_labels .* ada_labels; % both 1
@@ -19,6 +23,10 @@ tic
     
     % Evaluate classifier on training data with ada_predict
     ada_labels2 = boost.ada_predict(h_model, alpha, h_weights, training_set, mode);
+    if mode == "scores"
+        ada_labels2(ada_labels2<mean(ada_labels2)) = 0;
+        ada_labels2(ada_labels2>=mean(ada_labels2)) = 1;
+    end
     
     TP = train_labels .* ada_labels2; % both 1
     FP = ~train_labels .* ada_labels2; % test_labels was 0 but predictions was 1
@@ -31,6 +39,10 @@ tic
     
     % Test adaboosted classifier on test data
     predictions = boost.ada_predict(h_model, alpha, h_weights, testing_set, mode);
+    if mode == "scores"
+        predictions(predictions<mean(predictions)) = 0;
+        predictions(predictions>=mean(predictions)) = 1;
+    end
 
     % evaluate results
     TP = test_labels .* predictions; % both 1

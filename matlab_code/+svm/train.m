@@ -9,7 +9,5 @@ function model = train(feature_descriptors, labels, training_type)
         % Cross validate SVM - default 10 fold cross validation
         model = crossval(model);
     end
-    
-
 end
 

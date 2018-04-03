@@ -1,4 +1,4 @@
-function [ada_labels, h_model, h_weights, alpha]= ada_train(training_set, mode)
+function [ada_labels, ada_model]= ada_train(training_set, mode)
 % AdaBoost function 
 % training_set-> input: training set, cell array formatted as below
 %           feature_1 feature_2 ... feature_n class_labels
@@ -22,12 +22,10 @@ D =(1/M)*ones(M,1);           % initial training sample weights
 Y_train = cell2mat(training_set(:,N+1)); % class labels in original order
 
 svm_model = cell(1, N);       % weak learners   
-svm_labels = zeros(M,N);      % weak learner training outputs  
-svm_scores = zeros(M,N);      % weak learner scores
+svm_labels = zeros(M,N);      % weak learner training outputs 
 
 h_model = cell(T, 1);         % intermediate classifiers
-h_labels = zeros(M,T);        % intermediate classifier training outputs 
-h_scores = zeros(M,T);        % intermediate classifier scores  
+h_labels = zeros(M,T);        % intermediate classifier training outputs  
 h_weights = zeros(N,T);       % intermediate classifier weights   
 alpha = zeros(T,1);           % final classifier weights
 
@@ -89,20 +87,16 @@ while (sigma > sigma_min) && (isfinite(alpha(t)))
             %fprintf("Training SVM %d out of %d\n", f, N);
             X = cell2mat(Sx(:,f));
             svm_model{f}=fitcsvm(X,Y,'KernelFunction','rbf', 'KernelScale', sigma);
-            if mode == "labels"
-                svm_labels(:,f) = predict(svm_model{f}, X);
-            else
-                [ ~, svm_labels(:,f)] = predict(svm_model{f}, X);
-            end
+            svm_labels(:,f) = predict(svm_model{f}, X);
         end 
 
     % 3. intermediate classifier h(t) = linear combination of svm classifiers
         h_model{t} = svm_model;
-        h_weights(:,t) = calc_weights(svm_labels, Y, N, M, D, mode);
-        h_labels(:,t) = weighted_vote(svm_labels, h_weights(:,t), mode);
+        h_weights(:,t) = calc_weights(svm_labels, Y, N, M, D);
+        h_labels(:,t) = weighted_vote(svm_labels, h_weights(:,t), "labels");
 
     % 4. calculate classification weight for intermediate classifier h(t)
-         alpha(t) = calc_weights(h_labels(:,t), Y, 1, M, D, mode);
+         alpha(t) = calc_weights(h_labels(:,t), Y, 1, M, D);
          fprintf("Alpha %d = %f.\n", t, alpha(t));      
 
     % 5. Update training sample weights 
@@ -129,10 +123,10 @@ end
  alpha(~isfinite(alpha)) = [];
  
  % Discard trials where alpha(t) is less than the average alpha
- a_avg = mean(alpha);
- h_weights(:,alpha<a_avg) = [];
- h_model(alpha<a_avg) = [];
- alpha(alpha<a_avg) = [];
+%  a_avg = mean(alpha);
+%  h_weights(:,alpha<a_avg) = [];
+%  h_model(alpha<a_avg) = [];
+%  alpha(alpha<a_avg) = [];
  
  % total number of intemediate classifiers left
  T = length(alpha);
@@ -141,58 +135,60 @@ fprintf("Final votes for testing and training sets\n");
 tic
 H_labels = zeros(M,T);
 for t = 1:T
-    H_labels(:,t) = combo_predict(h_model{t}, training_set, N, h_weights(:,t), mode);
+    H_labels(:,t) = combo_predict(h_model{t}, training_set, N, h_weights(:,t), "labels");
 end
 
 ada_labels(:,1) = weighted_vote(H_labels, alpha, mode);
 
 if mode == "labels"
     ada_labels(ada_labels == -1) = 0;
+else
+    ada_labels = ada_labels+abs(min(ada_labels));
+    ada_labels = ada_labels/max(ada_labels);
 end
+
+ada_model = {h_model, h_weights, alpha};
 
 toc
 end
 
 % Calculate weights for classifiers based on their classification error
-function weights = calc_weights(trained_labels, class_labels, N, M, D, mode)
+function weights = calc_weights(trained_labels, class_labels, N, M, D)
     err = zeros(1,N);
+%     p0 = zeros(1,N);
+%     p1 = zeros(1,N);
     weights = zeros(1,N);
-    if mode == "labels"
        for n = 1:N
             for m=1:M
                 if (trained_labels(m,n)~=class_labels(m))
                     err(n)=err(n)+D(m); 
                 end  
+%                   if(trained_labels(m,n)~=class_labels(m))
+%                       p0(n) = p0(n)+D(m);
+%                   else
+%                       p1(n) = p1(n)+D(m);
+%                   end    
             end
+%             weights(n) = p1(n)-p0(n);
             weights(n)=0.5*log((1-err(n))/err(n));
        end
-    else  
-          for n = 1:N
-            for m=1:M
-                err(n) = err(n)+abs(trained_labels(m,n)-class_labels(m))*D(m);
-            end
-            weights(n)=0.5*log((1-err(n))/err(n));
-          end
-    end
 end
  
 % Assign labels to data based on a weighted average of classifiers
 function combo_labels = weighted_vote(trained_labels, weights, mode)
     if mode == "labels"
         combo_labels(:,1) = sign(sum(trained_labels*weights,2));
-        combo_labels(combo_labels==0) = -1;
+        combo_labels(combo_labels==0) = 1;
     else
         combo_labels(:,1) = sum(trained_labels*weights,2);
-        combo_labels = combo_labels+abs(min(combo_labels));
-        combo_labels = combo_labels/max(combo_labels);
     end
 end
 
 % Produce classification output for a set of N weighted weak classifiers 
-function predictions = combo_predict(models, testing_table, N, weights, mode)
-    weak_predictions = zeros(size(testing_table,1),N);
+function predictions = combo_predict(models, training_set, N, weights, mode)
+    weak_predictions = zeros(size(training_set,1),N);
     for f = 1:N
-        Xtest = cell2mat(testing_table(:,f));
+        Xtest = cell2mat(training_set(:,f));
         weak_predictions(:,f) = predict(models{f}, Xtest);
     end
     predictions = weighted_vote(weak_predictions, weights, mode);
