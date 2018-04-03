@@ -54,8 +54,6 @@ step = 1;  % sigma decrease step
 t = 1;     % trial number
 while (sigma > sigma_min) && (isfinite(alpha(t)))
     % train an intermediate classifier h(t)
-    tic
-    fprintf("Trial %d.\n", t);
     % 1. generate new weighted training set St using Dt
             p_min=min(D);
             p_max=max(D);
@@ -108,7 +106,6 @@ while (sigma > sigma_min) && (isfinite(alpha(t)))
     % 6. Update sigma and trial number
         sigma = sigma-step;
         t = t+1;
-    toc
 end
 
 % set T = number of trials completed, and delete empty columns
@@ -117,39 +114,38 @@ end
  h_model = h_model(1:T);
  alpha = alpha(1:T);
  
- % Discard trials where alpha == Inf or Nan
- h_weights(:,~isfinite(alpha)) = [];
- h_model(~isfinite(alpha)) = [];
- alpha(~isfinite(alpha)) = [];
+ % Clip trials where alpha == Inf or Nan
+ h_max = max(h_weights(isfinite(h_weights)));
+ h_weights(~isfinite(h_weights)) = h_max;
+ a_max = max(alpha(isfinite(alpha)));
+ alpha(~isfinite(alpha)) = a_max;
  
  % Discard trials where alpha(t) is less than the average alpha
-%  a_avg = mean(alpha);
-%  h_weights(:,alpha<a_avg) = [];
-%  h_model(alpha<a_avg) = [];
-%  alpha(alpha<a_avg) = [];
+ a_mid = 0.5*(max(alpha)-min(alpha))+min(alpha);
+ h_weights(:,alpha<a_mid) = [];
+ h_model(alpha<a_mid) = [];
+ alpha(alpha<a_mid) = [];
  
  % total number of intemediate classifiers left
  T = length(alpha);
   
 fprintf("Final votes for testing and training sets\n");
-tic
 H_labels = zeros(M,T);
-for t = 1:T
-    H_labels(:,t) = combo_predict(h_model{t}, training_set, N, h_weights(:,t), "labels");
-end
+    for t = 1:T
+        H_labels(:,t) = combo_predict(h_model{t}, training_set, N, h_weights(:,t), "labels");
+    end
 
-ada_labels(:,1) = weighted_vote(H_labels, alpha, mode);
+ada_labels(:,1) = weighted_vote(H_labels, alpha, "scores");
+ada_labels = ada_labels+abs(min(ada_labels));
+ada_labels = ada_labels/max(ada_labels);
 
-if mode == "labels"
-    ada_labels(ada_labels == -1) = 0;
-else
-    ada_labels = ada_labels+abs(min(ada_labels));
-    ada_labels = ada_labels/max(ada_labels);
-end
+    if mode == "labels"
+        ada_labels(ada_labels<mean(ada_labels)) = 0;
+        ada_labels(ada_labels>=mean(ada_labels)) = 1;
+    end
 
 ada_model = {h_model, h_weights, alpha};
 
-toc
 end
 
 % Calculate weights for classifiers based on their classification error
