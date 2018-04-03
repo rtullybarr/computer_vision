@@ -21,12 +21,13 @@ function [c_labels, p_labels] = ada_predict(model, testing_set)
         H_test(:,t) = combo_predict(h_models{t}, h_weights(:,t), testing_set, N, "labels");
     end
     
-    c_labels(:,1) = weighted_vote(H_test, alpha, "labels");
-    c_labels(c_labels == -1) = 0;
-    
     p_labels(:,1) = weighted_vote(H_test, alpha, "scores");
     p_labels = p_labels+abs(min(p_labels));
     p_labels = p_labels/max(p_labels);
+    
+    c_labels = p_labels;
+    c_labels(c_labels<mean(c_labels)) = 0;
+    c_labels(c_labels>=mean(c_labels)) = 1;
            
 end
 

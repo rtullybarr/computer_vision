@@ -135,6 +135,8 @@ for k = 1:6
         disp(['mean=' num2str(mean(BOOST_results.recall(1:5))) '  std=' num2str(std(BOOST_results.recall(1:5)))])
         disp('cross-validated accuracy')
         disp(['mean=' num2str(mean(BOOST_results.accuracy(1:5))) '  std=' num2str(std(BOOST_results.accuracy(1:5)))])
+        
+        
     end
 
     % find images that were not recognized by any classifier and save them.
@@ -155,3 +157,11 @@ for k = 1:6
         end
     end
 end
+
+% Display Confusion Matrices 
+plot_CM(LBP_confmat, 4);
+title('LBP Confusion Matrix')
+plot_CM(SIFT_confmat, 4);
+title('SIFT Confusion Matrix')
+plot_CM(BOOST_confmat, 4);
+title('AdaBoost Confusion Matrix')
