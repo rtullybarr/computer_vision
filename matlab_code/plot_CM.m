@@ -1,13 +1,11 @@
-function CM_labelled = plot_CM(CM)
-% Takes a 4x4 confusion matrix and displays a color coded and labelled
-% image. 
+function CM_labelled = plot_CM(CM, num_classes)
+% Takes a 4x4 confusion matrix and the number of classes and displays a color
+% coded and labelled image.
+%  
 % **NOTE: For a good quality image you have to maximize the figure. Otherwise
 % the text in the image doesn't show up well
-%
-% *Note: This could take larger confusion matrices, but the labelling would
-% have to be changed.
-%
-    
+
+
 % Initialize variables
 cmap = ones(50,3);
 b = [230, 249, 255];
@@ -45,6 +43,12 @@ end
 row_sum = sum(CM, 2);
 CM_norm = CM./row_sum;
 
+% In case row_sum was 0
+k = find(isnan(CM_norm))'; 
+CM_norm(k) = 0;
+% and
+CM_norm(isnan(CM_norm)) = 0;
+
 % Resize image so it's large enough to add text
 CM_img_resized = imresize(CM_norm,  [512 512], 'nearest');
 
@@ -55,7 +59,7 @@ CM_img_resized = imresize(CM_norm,  [512 512], 'nearest');
 positions = ones(r_cm*c_cm, 2);
 values = cell(r_cm*c_cm, 1);
 txtColor = zeros(r_cm*c_cm, 3);
-tix = zeros(1,4);
+tix = zeros(1,r_cm);
 
 r_increment = r_img/r_cm;
 c_increment = c_img/c_cm;
@@ -67,9 +71,9 @@ for i = 1:r_cm
         positions(ind,2) = c_increment*(j-0.5);
         
         % Round to 3 decimal places
-        values{ind} = num2str(round(CM_norm(i,j)*1000)/1000);
+        values{ind} = num2str(round(CM_norm(j,i)*1000)/1000);
         
-        if i == j
+        if i == j && i < num_classes+1
             txtColor(ind, :) = [1 1 1];
         end
         
@@ -98,7 +102,15 @@ set(gca,'Position',[0 0.05 1 .8]);
 xticks(tix)
 yticks(tix)
 
-labels = {'1', '2', '3', '4'};
+labels = cell(1,r_cm);
+for i = 1:r_cm
+    if i < num_classes + 1
+        labels{i} = num2str(i);
+    else
+        labels{i} = 0;
+    end    
+end
+
 xticklabels(labels)
 yticklabels(labels)
 set(gca,'xaxisLocation','top')

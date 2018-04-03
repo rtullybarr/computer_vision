@@ -19,7 +19,7 @@ species_masks = [ones(length(wildebeest), 1); ones(length(guineaFowl), 1) .* 2; 
 all_images = [wildebeest; guineaFowl; hartebeest; giraffe];
 
 % Step 2: load intermediate results.
-load('intermediate_results/dictsize_128_iter_10_lambda_34.mat');
+load('intermediate_results/trial_1_dictsize_128_iter_10_lambda_26.mat');
 
 % step 3: train one vs. all SVMs.
 fprintf("Training SVMs.\n");
@@ -74,20 +74,31 @@ for k = 1:6
     [SIFT_labels, SIFT_probabilities, SIFT_predictions] = predict_multiclass(SIFT_models, SIFT_test, "single");
     [BOOST_labels, BOOST_probabilities, BOOST_predictions] = predict_multiclass(BOOST_models, BOOST_test, "boost");
 
+    % add fifth class for when all four models predict '0'
+    temp = sum(LBP_predictions, 2);
+    LBP_labels(~temp) = 5;
+
+    temp = sum(SIFT_predictions, 2);
+    SIFT_labels(~temp) = 5;
+    
+    temp = sum(BOOST_predictions, 2);
+    BOOST_labels(~temp) = 5;
+    
     % score predictions
     [LBP_precision_scores, LBP_recall_scores, LBP_confmat] = svm.score_predictions(ground_truth, LBP_labels);
     [SIFT_precision_scores, SIFT_recall_scores, SIFT_confmat] = svm.score_predictions(ground_truth, SIFT_labels);
     [BOOST_precision_scores, BOOST_recall_scores, BOOST_confmat] = svm.score_predictions(ground_truth, BOOST_labels);
     
-    % summarize results
-    LBP_results.precision(k) = sum(LBP_precision_scores) / 4;
-    LBP_results.recall(k) = sum(LBP_recall_scores) / 4;
+    % summarize results (excluding precision/recall for class 5, which are
+    % 0/NaN by definition)
+    LBP_results.precision(k) = sum(LBP_precision_scores(1:4)) / 4;
+    LBP_results.recall(k) = sum(LBP_recall_scores(1:4)) / 4;
 
-    SIFT_results.precision(k) = sum(SIFT_precision_scores) / 4;
-    SIFT_results.recall(k) = sum(SIFT_recall_scores) / 4;
+    SIFT_results.precision(k) = sum(SIFT_precision_scores(1:4)) / 4;
+    SIFT_results.recall(k) = sum(SIFT_recall_scores(1:4)) / 4;
     
-    BOOST_results.precision(k) = sum(BOOST_precision_scores) / 4;
-    BOOST_results.recall(k) = sum(BOOST_recall_scores) / 4;
+    BOOST_results.precision(k) = sum(BOOST_precision_scores(1:4)) / 4;
+    BOOST_results.recall(k) = sum(BOOST_recall_scores(1:4)) / 4;
 
     % accuracy
     LBP_results.accuracy(k) = length(ground_truth(ground_truth == LBP_labels)) / length(ground_truth);
@@ -124,21 +135,9 @@ for k = 1:6
         disp(['mean=' num2str(mean(BOOST_results.recall(1:5))) '  std=' num2str(std(BOOST_results.recall(1:5)))])
         disp('cross-validated accuracy')
         disp(['mean=' num2str(mean(BOOST_results.accuracy(1:5))) '  std=' num2str(std(BOOST_results.accuracy(1:5)))])
+        
+        
     end
-
-    % add fifth class for when all four models predict '0'
-    temp = sum(LBP_predictions, 2);
-    LBP_labels(~temp) = 5;
-
-    temp = sum(SIFT_predictions, 2);
-    SIFT_labels(~temp) = 5;
-    
-    temp = sum(BOOST_predictions, 2);
-    BOOST_labels(~temp) = 5;
-
-    [LBP_precision_scores, LBP_recall_scores, LBP_confmat] = svm.score_predictions(ground_truth, LBP_labels);
-    [SIFT_precision_scores, SIFT_recall_scores, SIFT_confmat] = svm.score_predictions(ground_truth, SIFT_labels);
-    [BOOST_precision_scores, BOOST_recall_scores, BOOST_confmat] = svm.score_predictions(ground_truth, BOOST_labels);
 
     % find images that were not recognized by any classifier and save them.
     if k == 6
@@ -158,3 +157,11 @@ for k = 1:6
         end
     end
 end
+
+% Display Confusion Matrices 
+plot_CM(LBP_confmat, 4);
+title('LBP Confusion Matrix')
+plot_CM(SIFT_confmat, 4);
+title('SIFT Confusion Matrix')
+plot_CM(BOOST_confmat, 4);
+title('AdaBoost Confusion Matrix')
