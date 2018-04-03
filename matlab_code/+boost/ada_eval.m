@@ -5,7 +5,7 @@ tic
     testing_set = boost.ada_prep(LBP_test, SIFT_test, test_labels);
     
     % Create adaboosted classifer
-    [ada_labels, h_model, h_weights, alpha]= boost.ada_train(training_set, mode);
+    [ada_labels, model]= boost.ada_train(training_set, mode);
     if mode == "scores"
         ada_labels(ada_labels<mean(ada_labels)) = 0;
         ada_labels(ada_labels>=mean(ada_labels)) = 1;
@@ -22,8 +22,9 @@ tic
     fprintf("ada_labels: precision = %f, recall = %f\n", precision, recall);
     
     % Evaluate classifier on training data with ada_predict
-    ada_labels2 = boost.ada_predict(h_model, alpha, h_weights, training_set, mode);
+    [ada_labels2, scores] = boost.ada_predict(model, training_set);
     if mode == "scores"
+        ada_labels2 = scores;
         ada_labels2(ada_labels2<mean(ada_labels2)) = 0;
         ada_labels2(ada_labels2>=mean(ada_labels2)) = 1;
     end
@@ -38,8 +39,9 @@ tic
     fprintf("ada_labels2: precision = %f, recall = %f\n", precision, recall);
     
     % Test adaboosted classifier on test data
-    predictions = boost.ada_predict(h_model, alpha, h_weights, testing_set, mode);
+    [predictions, scores] = boost.ada_predict(model, testing_set);
     if mode == "scores"
+        predictions = scores;
         predictions(predictions<mean(predictions)) = 0;
         predictions(predictions>=mean(predictions)) = 1;
     end
