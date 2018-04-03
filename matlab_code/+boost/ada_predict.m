@@ -8,9 +8,9 @@
 
 function [c_labels, p_labels] = ada_predict(model, testing_set)
 
-    h_models  = model(1);       % intemediate classifiers
-    h_weights = model(2);       % weights for intermediate classifier component SVMs
-    alpha = model(3);           % final weights for intemediate classifiers
+    h_models  = model{1};       % intemediate classifiers
+    h_weights = model{2};       % weights for intermediate classifier component SVMs
+    alpha = model{3};           % final weights for intemediate classifiers
     
     M = size(testing_set, 1);   % number of training samples
     N = size(testing_set, 2)-1; % number of different feature types, excluding class labels

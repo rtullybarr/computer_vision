@@ -1,4 +1,4 @@
-function CM_labelled = plot_CM(CM, num_classes)
+function CM_labelled = plot_CM(CM, num_classes, labels)
 % Takes a 4x4 confusion matrix and the number of classes and displays a color
 % coded and labelled image.
 %  
@@ -102,14 +102,14 @@ set(gca,'Position',[0 0.05 1 .8]);
 xticks(tix)
 yticks(tix)
 
-labels = cell(1,r_cm);
-for i = 1:r_cm
-    if i < num_classes + 1
-        labels{i} = num2str(i);
-    else
-        labels{i} = 0;
-    end    
-end
+% labels = cell(1,r_cm);
+% for i = 1:r_cm
+%     if i < num_classes + 1
+%         labels{i} = num2str(i);
+%     else
+%         labels{i} = 0;
+%     end    
+% end
 
 xticklabels(labels)
 yticklabels(labels)
