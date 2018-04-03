@@ -2,21 +2,20 @@ function dictionary = lagrange_dual(X, U, l2norm, V)
 %LAGRANGE_DUAL 
 % learn dictionary bases given coefficients and features
 % minimize || feature_descriptors - dictionary * dictionary_assignments ||^2
+% Based on code from  Efficient sparse coding algorithms by H. Lee, A, Battle, R. Raina, and A. Y. Ng.
+% Source: https://ai.stanford.edu/~hllee/softwares/nips06-sparsecoding.htm
 
     XUt = X * U';
     trXXt = sum(sum(X.^2));
     UUt = U*U';
-    
-    disp('?');
-    
+
     % If V is badly conditioned, randomly initialize the dual_lambda
     % instead.
-    v_cond = cond(V)
-    
+    v_cond = cond(V);
     if v_cond > 1000 || isnan(v_cond)
         dual_lambda = 10*abs(rand(size(U, 1), 1));
     else
-        temp = V\XUt - UUt
+        temp = V\XUt - UUt;
         dual_lambda = diag(temp);
     end
     
