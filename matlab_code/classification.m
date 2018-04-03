@@ -40,48 +40,75 @@ perm = randperm(num_samples);
 % 70% train, 30% test
 split = floor(num_samples * 0.7);
 
-[LBP_models, LBP_crossval] = train_onevsall_models(LBP_image_vectors, perm(1:split), species_masks, 4);
-[SIFT_models, SIFT_crossval] = train_onevsall_models(SIFT_image_vectors, perm(1:split), species_masks, 4);
-% boosted_models = ?;
+validation_indices = perm(1:split);
+final_test_indices = perm(split + 1:end);
 
-% testing data
-LBP_test = LBP_image_vectors(perm(split + 1:end), :);
-SIFT_test = SIFT_image_vectors(perm(split + 1:end), :);
-% get ground truth class labels for testing data
-ground_truth = species_masks(perm(split + 1:end));
+% 5-fold cross validation
+partition = 1/5;
+% Split interval (dependent on k)
+split_interval = floor(length(validation_indices) * partition);
 
-% make predictions
-[LBP_labels, LBP_probabilities, LBP_predictions] = predict_multiclass(LBP_models, LBP_test);
-[SIFT_labels, SIFT_probabilities, SIFT_predictions] = predict_multiclass(SIFT_models, SIFT_test);
+for k = 1:6
+    if k == 6
+        train_indices = validation_indices;
+        test_indices = final_test_indices;
+    else
+        train_indices = validation_indices;
+        train_indices((k-1)*split_interval+1:k*split_interval) = [];
+        test_indices = validation_indices((k-1)*split_interval+1:k*split_interval);
+    end
+    
+    [LBP_models, LBP_crossval] = train_onevsall_models(LBP_image_vectors, train_indices, species_masks, 4);
+    [SIFT_models, SIFT_crossval] = train_onevsall_models(SIFT_image_vectors, train_indices, species_masks, 4);
+    % boosted_models = ?;
 
-% score predictions
-[LBP_precision_scores, LBP_recall_scores, LBP_confmat] = svm.score_predictions(ground_truth, LBP_labels);
-[SIFT_precision_scores, SIFT_recall_scores, SIFT_confmat] = svm.score_predictions(ground_truth, SIFT_labels);
+    % testing data
+    LBP_test = LBP_image_vectors(test_indices, :);
+    SIFT_test = SIFT_image_vectors(test_indices, :);
+    % get ground truth class labels for testing data
+    ground_truth = species_masks(test_indices);
 
-% summarize results
-LBP_precision = sum(LBP_precision_scores) / 4
-LBP_recall = sum(LBP_recall_scores) / 4
+    % make predictions
+    [LBP_labels, LBP_probabilities, LBP_predictions] = predict_multiclass(LBP_models, LBP_test);
+    [SIFT_labels, SIFT_probabilities, SIFT_predictions] = predict_multiclass(SIFT_models, SIFT_test);
 
-SIFT_precision = sum(SIFT_precision_scores) / 4
-SIFT_recall = sum(SIFT_recall_scores) / 4
+    % score predictions
+    [LBP_precision_scores, LBP_recall_scores, LBP_confmat] = svm.score_predictions(ground_truth, LBP_labels);
+    [SIFT_precision_scores, SIFT_recall_scores, SIFT_confmat] = svm.score_predictions(ground_truth, SIFT_labels);
 
-% average accuracy
-LBP_avg_accuracy = length(ground_truth(ground_truth == LBP_labels)) / length(ground_truth)
-SIFT_avg_accuracy = length(ground_truth(ground_truth == SIFT_labels)) / length(ground_truth)
+    if k == 6
+        disp('---- Final Testing Results ----')
+    else
+        disp(['---- Cross Validation Results for Fold ' num2str(k) ' ----'])
+    end
+    
+    % summarize results
+    LBP_precision = sum(LBP_precision_scores) / 4
+    LBP_recall = sum(LBP_recall_scores) / 4
 
-% add fifth class for when all four models predict '0'
-temp = sum(LBP_predictions, 2);
-LBP_labels(~temp) = 5;
+    SIFT_precision = sum(SIFT_precision_scores) / 4
+    SIFT_recall = sum(SIFT_recall_scores) / 4
 
-temp = sum(SIFT_predictions, 2);
-SIFT_labels(~temp) = 5;
+    % average accuracy
+    LBP_avg_accuracy = length(ground_truth(ground_truth == LBP_labels)) / length(ground_truth)
+    SIFT_avg_accuracy = length(ground_truth(ground_truth == SIFT_labels)) / length(ground_truth)
 
-[LBP_precision_scores, LBP_recall_scores, LBP_confmat] = svm.score_predictions(ground_truth, LBP_labels);
-[SIFT_precision_scores, SIFT_recall_scores, SIFT_confmat] = svm.score_predictions(ground_truth, SIFT_labels);
+    % add fifth class for when all four models predict '0'
+    temp = sum(LBP_predictions, 2);
+    LBP_labels(~temp) = 5;
 
-% find images that were classified as '5' (not recognized by any
-% classifier) and display them.
-err_indices = perm(split + 1 + find(LBP_labels == 5));
-for i = 1:length(err_indices)
-    figure; imshow(all_images{err_indices(i)});
+    temp = sum(SIFT_predictions, 2);
+    SIFT_labels(~temp) = 5;
+
+    [LBP_precision_scores, LBP_recall_scores, LBP_confmat] = svm.score_predictions(ground_truth, LBP_labels);
+    [SIFT_precision_scores, SIFT_recall_scores, SIFT_confmat] = svm.score_predictions(ground_truth, SIFT_labels);
+
+    % find images that were classified as '5' (not recognized by any
+    % classifier) and display them.
+    if k == 6
+        err_indices = perm(split + 1 + find(LBP_labels == 5));
+        for i = 1:length(err_indices)
+            figure; imshow(all_images{err_indices(i)});
+        end
+    end
 end
