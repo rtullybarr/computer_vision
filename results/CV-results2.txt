@@ -1,0 +1,62 @@
+---- Final Testing Results ----
+---- Local Binary Patterns Alone ----
+             precision    recall     accuracy
+             _________    _______    ________
+
+    cv1      0.94156      0.92857    0.92593 
+    cv2      0.93135      0.93525    0.93827 
+    cv3      0.89034      0.86997    0.87654 
+    cv4       0.9141      0.90227    0.90123 
+    cv5      0.81006      0.80336    0.85185 
+    final    0.90135      0.89695    0.91429 
+
+cross-validated precision
+mean=0.89748  std=0.052584
+cross-validated recall
+mean=0.88788  std=0.053784
+cross-validated accuracy
+mean=0.89877  std=0.035353
+
+Miss: 17
+horns, sides, low contrast/blurry 
+---- SIFT Alone ----
+             precision    recall     accuracy
+             _________    _______    ________
+
+    cv1      0.81732      0.75655    0.81481 
+    cv2      0.77674      0.82733    0.81481 
+    cv3      0.78968      0.75236    0.80247 
+    cv4        0.883      0.87121    0.87654 
+    cv5       0.7859      0.76307    0.81481 
+    final    0.85749      0.84999    0.86857 
+
+cross-validated precision
+mean=0.81053  std=0.043244
+cross-validated recall
+mean=0.7941  std=0.052834
+cross-validated accuracy
+mean=0.82469  std=0.029475
+
+Miss: 21
+blurry images, grassy images, parts of animals
+---- Combined, Boosted results ----
+             precision    recall     accuracy
+             _________    _______    ________
+
+    cv1      0.89167      0.88065    0.88889 
+    cv2      0.88463      0.85637    0.87654 
+    cv3      0.90497       0.8627    0.88889 
+    cv4      0.88738      0.82911    0.85185 
+    cv5      0.82412      0.71667    0.79012 
+    final    0.90483      0.88908    0.91429 
+
+cross-validated precision
+mean=0.87856  std=0.031416
+cross-validated recall
+mean=0.8291  std=0.06552
+cross-validated accuracy
+mean=0.85926  std=0.041501
+
+Miss: 22
+grassy, horns, parts of animals, guineafowl with long necks, blurry images
+>> 

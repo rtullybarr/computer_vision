@@ -95,7 +95,7 @@ while (sigma > sigma_min) && (isfinite(alpha(t)))
 
     % 4. calculate classification weight for intermediate classifier h(t)
          alpha(t) = calc_weights(h_labels(:,t), Y, 1, M, D);
-         fprintf("Alpha %d = %f.\n", t, alpha(t));      
+         %fprintf("Alpha %d = %f.\n", t, alpha(t));      
 
     % 5. Update training sample weights 
         if isfinite(alpha(t))
@@ -129,7 +129,7 @@ end
  % total number of intemediate classifiers left
  T = length(alpha);
   
-fprintf("Final votes for testing and training sets\n");
+%fprintf("Final votes for testing and training sets\n");
 H_labels = zeros(M,T);
     for t = 1:T
         H_labels(:,t) = combo_predict(h_model{t}, training_set, N, h_weights(:,t), "labels");
