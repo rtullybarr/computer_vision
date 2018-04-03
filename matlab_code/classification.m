@@ -4,8 +4,16 @@
 % reproducibility
 rng(1);
 
+% parameters
+% Path to .mat file containing image vectors to use for training and
+% testing.
+intermediate_results_file = 'intermediate_results/trial_1_dictsize_128_iter_10_lambda_26.mat';
+
 % some constants
 num_species = 4;
+
+% timing
+tic
 
 % Step 1: load images.
 wildebeest = preprocess(get_image_filenames('wildebeest', '*.jpg'), [256 256]);
@@ -19,11 +27,10 @@ species_masks = [ones(length(wildebeest), 1); ones(length(guineaFowl), 1) .* 2; 
 all_images = [wildebeest; guineaFowl; hartebeest; giraffe];
 
 % Step 2: load intermediate results.
-load('intermediate_results/trial_1_dictsize_128_iter_10_lambda_26.mat');
+load(intermediate_results_file);
 
 % step 3: train one vs. all SVMs.
 fprintf("Training SVMs.\n");
-tic
 
 % permutation
 num_samples = size(all_images, 1);
@@ -165,3 +172,5 @@ plot_CM(SIFT_confmat, 4);
 title('SIFT Confusion Matrix')
 plot_CM(BOOST_confmat, 4);
 title('AdaBoost Confusion Matrix')
+
+toc

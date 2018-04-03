@@ -1,0 +1,57 @@
+Elapsed time is 0.711614 seconds.
+Final votes for testing and training sets
+Elapsed time is 2.126528 seconds.
+Fomatting image vectors for adaptive boosting
+Elapsed time is 0.046655 seconds.
+---- Final Testing Results ----
+---- Local Binary Patterns Alone ----
+             precision    recall     accuracy
+             _________    _______    ________
+
+    cv1      0.95299      0.92857    0.92593 
+    cv2      0.93915      0.94938    0.93827 
+    cv3      0.91698      0.87989    0.88889 
+    cv4      0.94368      0.94167    0.93827 
+    cv5      0.87235      0.87122    0.90123 
+    final     0.8938      0.90195       0.92 
+
+cross-validated precision
+mean=0.92503  std=0.032285
+cross-validated recall
+mean=0.91414  std=0.036136
+cross-validated accuracy
+mean=0.91852  std=0.022427
+---- SIFT Alone ----
+             precision    recall     accuracy
+             _________    _______    ________
+
+    cv1      0.83558      0.78304    0.82716 
+    cv2      0.84994      0.83509     0.8642 
+    cv3       0.8307      0.81017    0.83951 
+    cv4      0.88398      0.87348    0.87654 
+    cv5      0.78792      0.76426    0.81481 
+    final    0.90437      0.89096    0.90286 
+
+cross-validated precision
+mean=0.83762  std=0.034727
+cross-validated recall
+mean=0.81321  std=0.043092
+cross-validated accuracy
+mean=0.84444  std=0.025601
+---- Combined, Boosted results ----
+             precision    recall     accuracy
+             _________    _______    ________
+
+    cv1      0.95269      0.88839    0.91358 
+    cv2      0.86451      0.80637    0.85185 
+    cv3      0.87571      0.86798    0.87654 
+    cv4      0.87392      0.78896    0.81481 
+    cv5      0.77981      0.73609    0.79012 
+    final    0.88338      0.87367       0.88 
+
+cross-validated precision
+mean=0.86932  std=0.061334
+cross-validated recall
+mean=0.81756  std=0.061523
+cross-validated accuracy
+mean=0.84938  std=0.048918
