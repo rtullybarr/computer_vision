@@ -58,24 +58,29 @@ for k = 1:6
         test_indices = validation_indices((k-1)*split_interval+1:k*split_interval);
     end
     
-    [LBP_models, LBP_crossval] = train_onevsall_models(LBP_image_vectors, train_indices, species_masks, 4);
-    [SIFT_models, SIFT_crossval] = train_onevsall_models(SIFT_image_vectors, train_indices, species_masks, 4);
-    % boosted_models = ?;
+    LBP_models = train_onevsall_models(LBP_image_vectors, train_indices, species_masks, 4, "single");
+    SIFT_models = train_onevsall_models(SIFT_image_vectors, train_indices, species_masks, 4, "single");
+    % Train AdaBoosted model for combined features
+    all_image_vectors = [LBP_image_vectors, SIFT_image_vectors];
+    BOOST_models = train_onevsall_models(all_image_vectors, train_indices, species_masks, 4, "boost");
 
     % testing data
     LBP_test = LBP_image_vectors(test_indices, :);
     SIFT_test = SIFT_image_vectors(test_indices, :);
+    BOOST_test = all_image_vectors(test_indices, :);
     % get ground truth class labels for testing data
     ground_truth = species_masks(test_indices);
 
     % make predictions
-    [LBP_labels, LBP_probabilities, LBP_predictions] = predict_multiclass(LBP_models, LBP_test);
-    [SIFT_labels, SIFT_probabilities, SIFT_predictions] = predict_multiclass(SIFT_models, SIFT_test);
+    [LBP_labels, LBP_probabilities, LBP_predictions] = predict_multiclass(LBP_models, LBP_test, "single");
+    [SIFT_labels, SIFT_probabilities, SIFT_predictions] = predict_multiclass(SIFT_models, SIFT_test, "single");
+    [BOOST_labels, BOOST_probabilities, BOOST_predictions] = predict_multiclass(BOOST_models, BOOST_test, "boost");
 
     % score predictions
     [LBP_precision_scores, LBP_recall_scores, LBP_confmat] = svm.score_predictions(ground_truth, LBP_labels);
     [SIFT_precision_scores, SIFT_recall_scores, SIFT_confmat] = svm.score_predictions(ground_truth, SIFT_labels);
-
+    [BOOST_precision_scores, BOOST_recall_scores, BOOST_confmat] = svm.score_predictions(ground_truth, BOOST_labels);
+    
     if k == 6
         disp('---- Final Testing Results ----')
     else
@@ -88,10 +93,14 @@ for k = 1:6
 
     SIFT_precision = sum(SIFT_precision_scores) / 4
     SIFT_recall = sum(SIFT_recall_scores) / 4
+    
+    BOOST_precision = sum(BOOST_precision_scores) / 4
+    BOOST_recall = sum(BOOST_recall_scores) / 4
 
     % average accuracy
     LBP_avg_accuracy = length(ground_truth(ground_truth == LBP_labels)) / length(ground_truth)
     SIFT_avg_accuracy = length(ground_truth(ground_truth == SIFT_labels)) / length(ground_truth)
+    BOOST_avg_accuracy = length(ground_truth(ground_truth == BOOST_labels)) / length(ground_truth)
 
     % add fifth class for when all four models predict '0'
     temp = sum(LBP_predictions, 2);
@@ -99,9 +108,13 @@ for k = 1:6
 
     temp = sum(SIFT_predictions, 2);
     SIFT_labels(~temp) = 5;
+    
+    temp = sum(BOOST_predictions, 2);
+    BOOST_labels(~temp) = 5;
 
     [LBP_precision_scores, LBP_recall_scores, LBP_confmat] = svm.score_predictions(ground_truth, LBP_labels);
     [SIFT_precision_scores, SIFT_recall_scores, SIFT_confmat] = svm.score_predictions(ground_truth, SIFT_labels);
+    [BOOST_precision_scores, BOOST_recall_scores, BOOST_confmat] = svm.score_predictions(ground_truth, BOOST_labels);
 
     % find images that were classified as '5' (not recognized by any
     % classifier) and display them.

@@ -1,30 +1,33 @@
 % Produce classification output for a set of weighted weak classifiers 
-% Input: 
-% model -> cell array of (N feature types)x(T trials) SVMs
-% alpha -> weights for T intemediate classifiers (weighted combo of T sets
-%          of N SVMs)
-% h_weights -> set of NxT weights for component SVMs
-% testing set -> cell array of (M training samples) x (N feature types)
-% mode -> "labels" (1/0) or "scores" (probability, 0->1)
+% Input: model
+    % h_models -> cell array of (N feature types)x(T trials) SVMs
+    % alpha -> weights for T intemediate classifiers (weighted combo of T sets
+    %          of N SVMs)
+    % h_weights -> set of NxT weights for component SVMs
+% Input: testing set -> cell array of (M training samples) x (N feature types)
 
-function labels = ada_predict(model, alpha, h_weights, testing_set, mode)
+function [c_labels, p_labels] = ada_predict(model, testing_set)
+
+    h_models  = model{1};       % intemediate classifiers
+    h_weights = model{2};       % weights for intermediate classifier component SVMs
+    alpha = model{3};           % final weights for intemediate classifiers
+    
     M = size(testing_set, 1);   % number of training samples
     N = size(testing_set, 2)-1; % number of different feature types, excluding class labels
-    T = size(h_weights, 2);       % number of intermediate classifiers, or trials used in ada_train  
+    T = size(h_weights, 2);     % number of intermediate classifiers, or trials used in ada_train  
     H_test = zeros(M, T);       % set of predictions from each intermediate classifier  
     
     for t = 1:T
-        H_test(:,t) = combo_predict(model{t}, h_weights(:,t), testing_set, N, "labels");
+        H_test(:,t) = combo_predict(h_models{t}, h_weights(:,t), testing_set, N, "labels");
     end
     
-    labels(:,1) = weighted_vote(H_test, alpha, mode);
-    if mode == "labels"
-        labels(labels == -1) = 0;
-    else
-        labels = labels+abs(min(labels));
-        labels = labels/max(labels);
-    end
-        
+    c_labels(:,1) = weighted_vote(H_test, alpha, "labels");
+    c_labels(c_labels == -1) = 0;
+    
+    p_labels(:,1) = weighted_vote(H_test, alpha, "scores");
+    p_labels = p_labels+abs(min(p_labels));
+    p_labels = p_labels/max(p_labels);
+           
 end
 
 function predictions = combo_predict(models, weights, testing_set, N, mode)

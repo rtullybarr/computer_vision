@@ -1,4 +1,4 @@
-function [ada_labels, h_model, h_weights, alpha]= ada_train(training_set, mode)
+function [ada_labels, ada_model]= ada_train(training_set, mode)
 % AdaBoost function 
 % training_set-> input: training set, cell array formatted as below
 %           feature_1 feature_2 ... feature_n class_labels
@@ -146,6 +146,8 @@ else
     ada_labels = ada_labels+abs(min(ada_labels));
     ada_labels = ada_labels/max(ada_labels);
 end
+
+ada_model = {h_model, h_weights, alpha};
 
 toc
 end

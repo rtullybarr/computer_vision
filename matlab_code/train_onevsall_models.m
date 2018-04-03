@@ -1,11 +1,16 @@
-function [models, crossval_results] = train_onevsall_models(image_vectors, train_indices, class_labels, num_species)
+function models = train_onevsall_models(image_vectors, train_indices, class_labels, num_species, mode)
 %TRAIN_MULTICLASS_SVMS
 
     % SVM training and testing
     num_samples = size(image_vectors, 1);
     models = cell(num_species, 1);
-    crossval_results = zeros(num_species, 1);
     X_train = image_vectors(train_indices, :);
+    
+    if mode == "boost"
+        len = size(X_train, 2)/2;
+        LBP_train = X_train(:,1:len);
+        SIFT_train = X_train(:,len+1:end);
+    end
     
     for positive_class = 1:num_species
         % set up class labels
@@ -14,12 +19,15 @@ function [models, crossval_results] = train_onevsall_models(image_vectors, train
 
         Y_train = binary_class_labels(train_indices);
 
-        % LBP
-        crossval_model = svm.train(X_train, Y_train, 'crossval');
-        crossval_results(positive_class) = kfoldLoss(crossval_model);
-        % Learns a function to convert from scores to probabilities.
-        model = svm.train(X_train, Y_train, 'simple');
-        model = fitPosterior(model);
+        if mode == "boost"
+            ada_data = boost.ada_prep(LBP_train, SIFT_train, Y_train);
+            [~, model] = boost.ada_train(ada_data, "labels");
+        else  
+            model = svm.train(X_train, Y_train);
+            % Learns a function to convert from scores to probabilities.
+            model = fitPosterior(model);
+        end 
+        
         models{positive_class} = model;
     end
 end
