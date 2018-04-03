@@ -8,9 +8,9 @@
 
 function [c_labels, p_labels] = ada_predict(model, testing_set)
 
-    h_models  = model{1};       % intemediate classifiers
-    h_weights = model{2};       % weights for intermediate classifier component SVMs
-    alpha = model{3};           % final weights for intemediate classifiers
+    h_models  = model(1);       % intemediate classifiers
+    h_weights = model(2);       % weights for intermediate classifier component SVMs
+    alpha = model(3);           % final weights for intemediate classifiers
     
     M = size(testing_set, 1);   % number of training samples
     N = size(testing_set, 2)-1; % number of different feature types, excluding class labels
@@ -21,13 +21,12 @@ function [c_labels, p_labels] = ada_predict(model, testing_set)
         H_test(:,t) = combo_predict(h_models{t}, h_weights(:,t), testing_set, N, "labels");
     end
     
+    c_labels(:,1) = weighted_vote(H_test, alpha, "labels");
+    c_labels(c_labels == -1) = 0;
+    
     p_labels(:,1) = weighted_vote(H_test, alpha, "scores");
     p_labels = p_labels+abs(min(p_labels));
     p_labels = p_labels/max(p_labels);
-    
-    c_labels = p_labels;
-    c_labels(c_labels<mean(c_labels)) = 0;
-    c_labels(c_labels>=mean(c_labels)) = 1;
            
 end
 
