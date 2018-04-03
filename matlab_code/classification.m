@@ -6,7 +6,6 @@ rng(1);
 
 % some constants
 num_species = 4;
-% determines feature selection method to be used.
 
 % Step 1: load images.
 wildebeest = preprocess(get_image_filenames('wildebeest', '*.jpg'), [256 256]);
@@ -41,8 +40,8 @@ perm = randperm(num_samples);
 % 70% train, 30% test
 split = floor(num_samples * 0.7);
 
-LBP_models = train_onevsall_models(LBP_image_vectors, perm(1:split), species_masks, 4);
-SIFT_models = train_onevsall_models(SIFT_image_vectors, perm(1:split), species_masks, 4);
+[LBP_models, LBP_crossval] = train_onevsall_models(LBP_image_vectors, perm(1:split), species_masks, 4);
+[SIFT_models, SIFT_crossval] = train_onevsall_models(SIFT_image_vectors, perm(1:split), species_masks, 4);
 % boosted_models = ?;
 
 % testing data
