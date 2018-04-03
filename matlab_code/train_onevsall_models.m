@@ -8,8 +8,8 @@ function models = train_onevsall_models(image_vectors, train_indices, class_labe
     
     if mode == "boost"
         len = size(X_train, 2)/2;
-        LBP_train = X_train(1:len);
-        SIFT_train = X_train(len+1:end);
+        LBP_train = X_train(:,1:len);
+        SIFT_train = X_train(:,len+1:end);
     end
     
     for positive_class = 1:num_species
@@ -20,16 +20,15 @@ function models = train_onevsall_models(image_vectors, train_indices, class_labe
         Y_train = binary_class_labels(train_indices);
 
         if mode == "boost"
-            ada_data = adaprep(LBP_train, SIFT_train, Y_train);
+            ada_data = boost.ada_prep(LBP_train, SIFT_train, Y_train);
             [~, model] = boost.ada_train(ada_data, "labels");
         else  
             model = svm.train(X_train, Y_train);
             % Learns a function to convert from scores to probabilities.
             model = fitPosterior(model);
-        end  
+        end 
         
         models{positive_class} = model;
-            
     end
 end
 

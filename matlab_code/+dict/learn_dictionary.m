@@ -1,5 +1,5 @@
 function dictionary = learn_dictionary(features, training_set_size, dictionary_size, iterations, lambda)
-%LEARN DICTIONARY - uses the provided features to learn a dictionary
+%LEARN DICTIONARY - uses the provided features to learn a dictionary.
     
     features_flat = cell(length(features), 1);
     for i = 1:length(features)
