@@ -1,11 +1,11 @@
 % This function takes an image and outputs cell-structured LBP features 
 % INPUT: 
-%   Required: filename -> filename of image
+%   Required: img -> greyscale image, RxC
 %   Optional: 
 %   1. cellsize: 2x2 array, size of cells, default = [16,16]
 %   2. filt: parameter for filtering, default = 0 (no filtering)
 %   3. rot: whether to implement rotation invariance default = 0 (false)
-% OUTPUT: RxCx59 matrix of LBP features (or RxCx10 for rot. invariant)
+% OUTPUT: (R/cellsize)x(C/cellsize)x59 matrix of LBP features (or RxCx10 for rot. invariant)
 %         Change to 2D matrix: features = reshape(features, [RxC, 59]) 
 
 

@@ -7,7 +7,7 @@ rng(1);
 % parameters
 % Path to .mat file containing image vectors to use for training and
 % testing.
-intermediate_results_file = 'intermediate_results/trial_1_dictsize_128_iter_10_lambda_26.mat';
+intermediate_results_file = 'intermediate_results/dictsize_128_iter_10_lambda_34.mat';
 
 % some constants
 num_species = 4;
