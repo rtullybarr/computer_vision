@@ -1,10 +1,13 @@
 % Produce classification output for a set of weighted weak classifiers 
-% Input: model
+% INPUT: model
     % h_models -> cell array of (N feature types)x(T trials) SVMs
     % alpha -> weights for T intemediate classifiers (weighted combo of T sets
     %          of N SVMs)
     % h_weights -> set of NxT weights for component SVMs
-% Input: testing set -> cell array of (M training samples) x (N feature types)
+% INPUT: testing set -> cell array of (M training samples) x (N feature types)
+% OUTPUT: 
+    % c_labels -> class labels (1/0)
+    % p_labels -> probabilites (0->1)
 
 function [c_labels, p_labels] = ada_predict(model, testing_set)
 

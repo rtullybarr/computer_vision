@@ -1,18 +1,23 @@
 function [ada_labels, ada_model]= ada_train(training_set, mode)
 % AdaBoost function 
-% training_set-> input: training set, cell array formatted as below
-%           feature_1 feature_2 ... feature_n class_labels
-%  sample 1   1xN1      1xN2    ...     1xNn       +1/-1 
-%  sample 2   1xN1      1xN2    ...     1xNn       +1/-1
-%   ...        ...      ...     ...     ...         ...
-%  sample M   1xN1      1xN2    ...     1xNn       +1/-1 
-% 
-% mode -> "labels" (1/0) or "scores" (floating pt)
-% ada_labels-> labels for training set, 1/0 for yes/no
-% h_model -> intemediate classifiers, set of (N feature types)x(T trials) SVMs
-% h_weights -> NxT weights for SVMs in h_model
-% alpha -> T weights for intemediate classifers h_model(:,1:T)
-% Choosen Weak classifier: SVM
+% INPUTS:
+    % training_set-> input: training set, cell array formatted as below
+    %           feature_1 feature_2 ... feature_n class_labels
+    %  sample 1   1xN1      1xN2    ...     1xNn       +1/-1 
+    %  sample 2   1xN1      1xN2    ...     1xNn       +1/-1
+    %   ...        ...      ...     ...     ...         ...
+    %  sample M   1xN1      1xN2    ...     1xNn       +1/-1 
+    % 
+    % mode -> "labels" (1/0) or "scores" (floating pt)
+
+% OUTPUTS:
+    % ada_labels-> labels for training set, 1/0 for yes/no
+    % ada_model -> cell array containing:
+    %   h_model -> intemediate classifiers, set of (N feature types)x(T trials) SVMs
+    %   h_weights -> NxT weights for SVMs in h_model
+    %   alpha -> T weights for intemediate classifers h_model(:,1:T)
+    
+% Choosen weak classifier: SVM
 
 % Initialize Variables
 M = size(training_set,1);     % number of training samples
@@ -47,7 +52,7 @@ for i = 1:N
 end
 
 sigma_min = mean(sigma_min_all);
-%disp(sigma_min);
+
 
 sigma = T; % inital sigma
 step = 1;  % sigma decrease step
@@ -120,7 +125,7 @@ end
  a_max = max(alpha(isfinite(alpha)));
  alpha(~isfinite(alpha)) = a_max;
  
- % Discard trials where alpha(t) is less than the average alpha
+ % Discard trials where alpha(t) is less than the mid-point value of alpha
  a_mid = 0.5*(max(alpha)-min(alpha))+min(alpha);
  h_weights(:,alpha<a_mid) = [];
  h_model(alpha<a_mid) = [];
@@ -144,6 +149,7 @@ ada_labels = ada_labels/max(ada_labels);
         ada_labels(ada_labels>=mean(ada_labels)) = 1;
     end
 
+% final model including SVM classifiers and associated weights    
 ada_model = {h_model, h_weights, alpha};
 
 end
@@ -158,14 +164,8 @@ function weights = calc_weights(trained_labels, class_labels, N, M, D)
             for m=1:M
                 if (trained_labels(m,n)~=class_labels(m))
                     err(n)=err(n)+D(m); 
-                end  
-%                   if(trained_labels(m,n)~=class_labels(m))
-%                       p0(n) = p0(n)+D(m);
-%                   else
-%                       p1(n) = p1(n)+D(m);
-%                   end    
+                end    
             end
-%             weights(n) = p1(n)-p0(n);
             weights(n)=0.5*log((1-err(n))/err(n));
        end
 end
