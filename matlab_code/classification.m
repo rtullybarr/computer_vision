@@ -166,11 +166,12 @@ for k = 1:6
 end
 
 % Display Confusion Matrices 
-plot_CM(LBP_confmat, 4);
+labels = {'W', 'GF', 'H', 'G','NC'};
+plot_CM(LBP_confmat, 4, labels);
 title('LBP Confusion Matrix')
-plot_CM(SIFT_confmat, 4);
+plot_CM(SIFT_confmat, 4, labels);
 title('SIFT Confusion Matrix')
-plot_CM(BOOST_confmat, 4);
+plot_CM(BOOST_confmat, 4, labels);
 title('AdaBoost Confusion Matrix')
 
 toc
