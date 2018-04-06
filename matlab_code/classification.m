@@ -7,7 +7,7 @@ rng(1);
 % parameters
 % Path to .mat file containing image vectors to use for training and
 % testing.
-intermediate_results_file = 'intermediate_results/dictsize_128_iter_10_lambda_34.mat';
+intermediate_results_file = 'intermediate_results/trial_1_dictsize_128_iter_10_lambda_34_numImg_812.mat';
 
 % some constants
 num_species = 4;
@@ -67,18 +67,21 @@ for k = 1:6
     SIFT_models = train_onevsall_models(SIFT_image_vectors, train_indices, species_masks, 4, "single");
     % Train AdaBoosted model for combined features
     all_image_vectors = [LBP_image_vectors, SIFT_image_vectors];
+    %BOOST_model = train_onevsall_models(all_image_vectors, train_indices, species_masks, 4, "boost_cat");
     BOOST_models = train_onevsall_models(all_image_vectors, train_indices, species_masks, 4, "boost");
 
     % testing data
     LBP_test = LBP_image_vectors(test_indices, :);
     SIFT_test = SIFT_image_vectors(test_indices, :);
     BOOST_test = all_image_vectors(test_indices, :);
+   
     % get ground truth class labels for testing data
     ground_truth = species_masks(test_indices);
 
     % make predictions
     [LBP_labels, LBP_probabilities, LBP_predictions] = predict_multiclass(LBP_models, LBP_test, "single");
     [SIFT_labels, SIFT_probabilities, SIFT_predictions] = predict_multiclass(SIFT_models, SIFT_test, "single");
+    %[BOOST_labels, BOOST_probabilities, BOOST_predictions] = predict_multiclass(BOOST_model, BOOST_test, "boost_cat");
     [BOOST_labels, BOOST_probabilities, BOOST_predictions] = predict_multiclass(BOOST_models, BOOST_test, "boost");
 
     % add fifth class for when all four models predict '0'
@@ -150,17 +153,17 @@ for k = 1:6
     if k == 6
         LBP_err_indices = perm(split + find(LBP_labels == 5));
         for i = 1:length(LBP_err_indices)
-            imwrite(all_images{LBP_err_indices(i)}, ['misclassified_images/LBP_miss_' num2str(LBP_err_indices(i)) '.jpg']);
+            imwrite(all_images{LBP_err_indices(i)}, ['misclassified_images/LBP_miss/LBP_miss_' num2str(LBP_err_indices(i)) '.jpg']);
         end
         
         SIFT_err_indices = perm(split + find(SIFT_labels == 5));
         for i = 1:length(SIFT_err_indices)
-            imwrite(all_images{SIFT_err_indices(i)}, ['misclassified_images/SIFT_miss_' num2str(SIFT_err_indices(i)) '.jpg']);
+            imwrite(all_images{SIFT_err_indices(i)}, ['misclassified_images/SIFT_miss/SIFT_miss_' num2str(SIFT_err_indices(i)) '.jpg']);
         end
         
-        BOOST_err_indices = perm(split + find(SIFT_labels == 5));
+        BOOST_err_indices = perm(split + find(BOOST_labels == 5));
         for i = 1:length(BOOST_err_indices)
-            imwrite(all_images{BOOST_err_indices(i)}, ['misclassified_images/BOOST_miss_' num2str(BOOST_err_indices(i)) '.jpg']);
+            imwrite(all_images{BOOST_err_indices(i)}, ['misclassified_images/BOOST_miss/BOOST_miss_' num2str(BOOST_err_indices(i)) '.jpg']);
         end
     end
 end

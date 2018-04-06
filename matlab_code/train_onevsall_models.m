@@ -22,7 +22,9 @@ function models = train_onevsall_models(image_vectors, train_indices, class_labe
         if mode == "boost"
             ada_data = boost.ada_prep(LBP_train, SIFT_train, Y_train);
             [~, model] = boost.ada_train(ada_data, "labels");
-        else  
+        elseif mode == "boost_cat"
+            model = fitcensemble(X_train, Y_train, 'Method', 'GentleBoost');
+        else
             model = svm.train(X_train, Y_train);
             % Learns a function to convert from scores to probabilities.
             model = fitPosterior(model);

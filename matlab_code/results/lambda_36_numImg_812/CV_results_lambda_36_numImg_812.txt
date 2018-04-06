@@ -1,0 +1,53 @@
+---- Final Testing Results ----
+---- Local Binary Patterns Alone ----
+             precision    recall     accuracy
+             _________    _______    ________
+
+    cv1      0.93442      0.83631    0.83186 
+    cv2      0.94941      0.88397    0.85841 
+    cv3      0.92138      0.88527    0.87611 
+    cv4      0.95714      0.90538    0.87611 
+    cv5      0.96799      0.87903    0.87611 
+    final    0.96666      0.90962    0.91393 
+
+cross-validated precision
+mean=0.94607  std=0.018439
+cross-validated recall
+mean=0.87799  std=0.025384
+cross-validated accuracy
+mean=0.86372  std=0.019388
+---- SIFT Alone ----
+             precision    recall     accuracy
+             _________    _______    ________
+
+    cv1      0.88744      0.79099    0.73451 
+    cv2      0.87365      0.72821    0.67257 
+    cv3      0.82381      0.72793    0.72566 
+    cv4      0.81943      0.77422    0.72566 
+    cv5      0.87314      0.75358    0.75221 
+    final    0.92538      0.77884    0.77049 
+
+cross-validated precision
+mean=0.85549  std=0.031489
+cross-validated recall
+mean=0.75498  std=0.027918
+cross-validated accuracy
+mean=0.72212  std=0.029748
+---- Combined, Boosted results ----
+             precision    recall     accuracy
+             _________    _______    ________
+
+    cv1      0.89007      0.80982    0.81416 
+    cv2      0.89564      0.86603    0.82301 
+    cv3        0.887      0.84141    0.84071 
+    cv4      0.86557      0.87356    0.85841 
+    cv5      0.89842      0.84851    0.82301 
+    final    0.93136      0.83269    0.81557 
+
+cross-validated precision
+mean=0.88734  std=0.012974
+cross-validated recall
+mean=0.84786  std=0.024899
+cross-validated accuracy
+mean=0.83186  std=0.017699
+Elapsed time is 597.125244 seconds.

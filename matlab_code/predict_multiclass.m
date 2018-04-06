@@ -17,6 +17,11 @@ function [labels, per_class_probabilities, per_class_predictions] = predict_mult
         if mode == "boost"
             [predictions, probabilities] = boost.ada_predict(models{i}, testing_set);
             per_class_probabilities(:, i) = probabilities;
+        elseif mode == "boost_cat"
+            [predictions, probabilities] = predict(models{i}, testing_vectors);
+            probabilities(:,2) = probabilities(:,2)+abs(min(probabilities(:,2)));
+            probabilities(:,2) = probabilities(:,2)/max(probabilities(:,2));
+            per_class_probabilities(:, i) = probabilities(:, 2);
         else
             [predictions, probabilities] = svm.predict(models{i}, testing_vectors);
             per_class_probabilities(:, i) = probabilities(:, 2);

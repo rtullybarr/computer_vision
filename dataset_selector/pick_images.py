@@ -118,13 +118,14 @@ def select_images(species):
                 pass
 
             crop_image(species, line["url_info"], filename)
+            print(filename)
 
 
 if __name__ == "__main__":
-    species_finished = ["wildebeest"]
-    species_todo = ["zebra", "hartebeest", "buffalo", "impala", "giraffe", "elephant", "guineaFowl"]
+    species_finished = ["wildebeest", "guineaFowl", "giraffe", "impala"]
+    species_todo = ["zebra", "hartebeest", "buffalo", "elephant",]
 
-    select_images("zebra")
+    select_images("hartebeest")
 
     # alternate mode: provide the url_info and filename
     # e.g.

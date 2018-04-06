@@ -4,7 +4,7 @@ rng(1);
 % parameters
 dictionary_size = 128;
 dictionary_iterations = 10;
-lambda = 0.026;
+lambda = 0.034;
 training_set_size = 20000;
 trial_number = 1; % only affects file name.
 
